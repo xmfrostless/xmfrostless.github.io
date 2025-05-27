@@ -162,4 +162,4 @@ gsFunc.Execute();
 
 在C#工程或者Unity中都可以直接使用,感兴趣的可以下载玩玩,可能有人觉得是在做无用功,但是我觉得很有意义,而且我会在我自己的项目中使用,最主要的写这些东西让我找到了编程的乐趣.
 
-github: <a href="https://github.com/Jenocn/GameScript" target="_blank">https://github.com/Jenocn/GameScript</a>
+github: <a href="https://github.com/xmfrostless/GameScript" target="_blank">https://github.com/xmfrostless/GameScript</a>

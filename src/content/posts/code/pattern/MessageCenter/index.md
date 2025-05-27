@@ -8,8 +8,6 @@ tags: [设计模式, C++]
 
 **实现一个自动定义消息ID,按需派发消息,强类型,支持消息队列，内存安全的消息中枢系统**  
 
-上篇文章<a href="https://jenocn.github.io/code/pattern/Message" target="_blank">《代码中的消息机制》</a>已经简单的讲解了消息机制,并附带了源码和实际使用场景,这篇文章将直接讲解如何实现进阶版消息机制  
-
 本文将从以下几点讲解：  
 - 实现自定义消息ID
 - 实现按需派发消息
@@ -17,7 +15,6 @@ tags: [设计模式, C++]
 - 实现消息队列
 - 实现内存安全
 - 完善消息队列
-- 附源码
 
 <!-- more -->
 
@@ -401,8 +398,5 @@ void main()
     MessageCenter::RemoveListener("main");
 }
 ```
-
-## 源码仓库
-[https://github.com/Jenocn/MessageCenter](https://github.com/Jenocn/MessageCenter)
 
 这篇文章到这里就结束啦,至此,整个消息机制也告一段落啦,希望看过之后对你能有帮助,如有问题可以邮我,一起交流学习!  

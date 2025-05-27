@@ -62,7 +62,7 @@ void Student::Set(int age, const std::string &name)
 int main(int argc, char **argb)
 {
 	auto stu = new Student();
-	stu->Set(27, "Jenocn");
+	stu->Set(27, "Jack");
 	stu->Show();
 
 	return 0;

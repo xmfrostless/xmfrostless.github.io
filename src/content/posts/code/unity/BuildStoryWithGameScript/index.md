@@ -65,8 +65,6 @@ public abstract class GameCommandBase {
 }
 ```
 
-各类具体的命令:
-这里使用到了消息模式,关于消息模式可以参考我的另一篇文章[<<进阶版消息机制实现>>](https://jenocn.github.io/2019/04/MessageCenter/)
 ```csharp
 public class StoryCommand : GameCommandBase {
 
@@ -157,7 +155,7 @@ CommandSystem.Execute();
 ## GameScript接入 
 
 > Github:
-[https://github.com/Jenocn/GameScript](https://github.com/Jenocn/GameScript)  
+[https://github.com/xmfrostless/GameScript](https://github.com/xmfrostless/GameScript)  
 
 GameScript是我自己写的一个基于字符串解析的脚本语言,优点就是接入方便,直接将DLL拖入Unity,无需配置,就可以直接使用.
 

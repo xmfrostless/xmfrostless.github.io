@@ -15,10 +15,6 @@ tags: [Unity, Shader]
 
 ---
 
-上一篇:[Unity表面着色器笔记(二)](https://jenocn.github.io/2019/08/UnitySurfaceShader2/)
-
----
-
 效果展示:
 (原图, 置灰, 反转, 增加亮部减暗暗部)
 (各种纹理混合)
@@ -168,8 +164,3 @@ void surf(Input IN, inout SurfaceOutput o) {
 ![混合公式](shader_img2.jpg)
 
 来源: <a href="https://jingyan.baidu.com/article/36d6ed1f7c04801bcf4883c2.html">https://jingyan.baidu.com/article/36d6ed1f7c04801bcf4883c2.html</a>
-
----
-
-下一篇:[Unity表面着色器笔记(四)](https://jenocn.github.io/2019/09/UnitySurfaceShader4/)
-

@@ -11,10 +11,6 @@ tags: [Unity, Shader]
 
 ---
 
-上一篇:[Unity表面着色器笔记(四)](https://jenocn.github.io/2019/09/UnitySurfaceShader4/)
-
----
-
 效果展示:
 
 ![display](shader_img2.jpg)
@@ -140,7 +136,3 @@ Shader "Custom/OutlineShader" {
   Fallback "Diffuse"
 }
 ```
-
----
-
-下一篇:[Unity表面着色器笔记(六)](https://jenocn.github.io/2020/01/UnitySurfaceShader6/)

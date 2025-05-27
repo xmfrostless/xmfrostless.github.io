@@ -7,7 +7,7 @@ import type {
 import { LinkPreset } from './types/config'
 
 export const siteConfig: SiteConfig = {
-  title: 'Jenocn',
+  title: 'xmfrostless',
   subtitle: 'Blog',
   lang: 'zh_CN',         // 'en', 'zh_CN', 'zh_TW', 'ja', 'ko'
   themeColor: {
@@ -35,7 +35,7 @@ export const navBarConfig: NavBarConfig = {
     LinkPreset.About,
     {
       name: 'GitHub',
-      url: 'https://github.com/Jenocn',     // Internal links should not include the base path, as it is automatically added
+      url: 'https://github.com/xmfrostless',     // Internal links should not include the base path, as it is automatically added
       external: true,                               // Show an external link icon and will open in a new tab
     },
   ],
@@ -43,13 +43,13 @@ export const navBarConfig: NavBarConfig = {
 
 export const profileConfig: ProfileConfig = {
   avatar: 'assets/images/avatar.jpg',  // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-  name: 'Jenocn',
-  bio: '布噜呆',
+  name: 'xmfrostless',
+  bio: ' ',
   links: [
     {
       name: 'GitHub',
       icon: 'fa6-brands:github',
-      url: 'https://github.com/Jenocn',
+      url: 'https://github.com/xmfrostless',
     },
   ],
 }

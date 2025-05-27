@@ -11,10 +11,6 @@ tags: [Unity, Shader]
 
 ---
 
-上一篇:[Unity表面着色器笔记(三)](https://jenocn.github.io/2019/08/UnitySurfaceShader3/)
-
----
-
 效果展示:
 ![display](shader_img2.jpg)  
 
@@ -149,8 +145,4 @@ Shader "Custom/Blur" {
   Fallback "Diffuse"
 }
 ```
-
----
-
-下一篇:[Unity表面着色器笔记(五)](https://jenocn.github.io/2019/09/UnitySurfaceShader5/)
 

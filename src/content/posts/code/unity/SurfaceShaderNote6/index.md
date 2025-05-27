@@ -11,10 +11,6 @@ tags: [Unity, Shader]
 
 ---
 
-上一篇:[Unity表面着色器笔记(五)](https://jenocn.github.io/2019/09/UnitySurfaceShader5/)
-
----
-
 效果展示:
 ![display](burn_shader_display.gif)
 

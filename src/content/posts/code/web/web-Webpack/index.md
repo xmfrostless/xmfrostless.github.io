@@ -90,8 +90,6 @@ new Vue({
 
 创建vue实例,然后初始`message`为"Hello World!"
 
-关于`vue`上篇文章<a href="https://jenocn.github.io/2019/04/Vue-Good/">《Vue 超棒的!》</a>有简单的介绍
-
 ##### 在`webpack`中配置vue
 在`webpack.config.js`中添加配置:
 ```js
@@ -218,7 +216,4 @@ module.exports = {
 ### 最后  
 
 本文就到这里了,目前呢,基本上是满足我的需求了,webpack还有很多功能,比如导出资源,还有很多插件,都是提高开发效率的,待以后慢慢深入!本文呢作为一个记录和入门,一方面自己以后可以回头看看,另一方面希望能够帮到正在学习的朋友.  
-
-关于Vue:《Vue 超棒的!》
-<a href="https://jenocn.github.io/2019/04/Vue-Good/" target="_blank">https://jenocn.github.io/2019/04/Vue-Good/</a>  
 

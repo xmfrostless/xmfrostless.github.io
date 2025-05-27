@@ -18,10 +18,6 @@ tags: [Unity, Shader]
 
 ---
 
-上一篇:[Unity表面着色器笔记(一)](https://jenocn.github.io/2019/06/UnitySurfaceShader1/)
-
----
-
 ## Properties属性类型
 
 ```CG
@@ -96,7 +92,4 @@ struct Input {
 
 参考文章:<a href="http://www.cnblogs.com/-867259206/p/5596698.html">http://www.cnblogs.com/-867259206/p/5596698.html</a>
 
----
-
-下一篇:[Unity表面着色器笔记(三)](https://jenocn.github.io/2019/08/UnitySurfaceShader3/)
 

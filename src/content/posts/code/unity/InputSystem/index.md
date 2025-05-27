@@ -198,8 +198,3 @@ public static void Uppublished() {
 ```
 这个`Uppublished`在使用时,只需要在一个总的管理系统内调用一次  
 
-## 最后  
-整个输入系统的代码其实就这么简单,下面将提供完整的源码,包含了对摇杆的支持,希望能够帮助到需要的人.
-
-源码链接:
-[http://github.com/Jenocn/InputSystem](http://github.com/Jenocn/InputSystem)
