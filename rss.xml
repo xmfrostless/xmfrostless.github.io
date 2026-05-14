@@ -1,0 +1,3722 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>xmfrostless</title><description>Blog</description><link>https://xmfrostless.github.io/</link><language>zh_CN</language><item><title>C++中const、constexpr、consteval、constinit的区别</title><link>https://xmfrostless.github.io/posts/code/cpp/constfamily/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/constfamily/</guid><description>const，用来定义常量，即值在创建后不会改变</description><pubDate>Sun, 19 May 2024 11:26:49 GMT</pubDate><content:encoded>&lt;p&gt;const，用来定义常量，即值在创建后不会改变，但const声明的常量发生在运行时，因此编译期是无法知道这个值的。于是，C++11中增加了constexpr，C++20中又增加了consteval和constinit。&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;constexpr&lt;/h2&gt;
+&lt;p&gt;constexpr可以用来修饰函数和常量，与const不同的地方在于，constexpr修饰的常量必须是编译期明确知道的值。
+constexpr修饰的函数，若在编译期可以得出返回值，则可以作为编译期可获得结果的常量使用，否则为运行时获得结果的函数。
+下面简单举例说明：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;constexpr int Sum(int a, int b) {
+	return a + b;
+}
+
+void main() {
+	// 若参数为编译期常量，则该函数可以作为编译期可获得结果的常量
+	Sum(1, 2);
+
+	// 若参数为变量，则该函数不能在编译期获得结果，即不可当作编译期常量使用。
+	int a = 1;
+	int b = 2;
+	Sum(a, b);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;consteval&lt;/h2&gt;
+&lt;p&gt;consteval只能用于修饰函数，使用该函数时必须在编译期能够获取返回值，否则编译不能通过。&lt;/p&gt;
+&lt;h2&gt;constinit&lt;/h2&gt;
+&lt;p&gt;constinit与上述都不同，用来约束目标必须是在static生命周期下的目标，用以确保变量在程序初始化时就已经能够获得其值。&lt;/p&gt;
+</content:encoded></item><item><title>C++实现矩阵模板类</title><link>https://xmfrostless.github.io/posts/code/cpp/matrix/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/matrix/</guid><description>在计算机中，矩阵有着广泛的应用</description><pubDate>Thu, 29 Feb 2024 19:00:00 GMT</pubDate><content:encoded>&lt;p&gt;在计算机中，矩阵有着广泛的应用，例如计算机图形学中，使用矩阵可以轻松的解决缩放、移动、旋转的变换问题。下面使用C++模板实现矩阵类，其中，数据类型，矩阵行列都通过模板参数来指定。&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#pragma once
+
+#include &amp;lt;cassert&amp;gt;
+#include &amp;lt;vector&amp;gt;
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+class Matrix {
+public:
+	Matrix();
+	Matrix(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target);
+	Matrix(Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp;&amp;amp; target);
+	Matrix(std::initializer_list&amp;lt;TNUMBER&amp;gt;&amp;amp;&amp;amp; data);
+	Matrix(std::vector&amp;lt;TNUMBER&amp;gt;&amp;amp;&amp;amp; data);
+	virtual ~Matrix() = default;
+
+	bool operator==(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const;
+	bool operator!=(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const;
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; operator=(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target);
+
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator+(TNUMBER num) const;
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator-(TNUMBER num) const;
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator*(TNUMBER num) const;
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator/(TNUMBER num) const;
+
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator+(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const;
+	Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; operator-(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const;
+
+	template &amp;lt;int TARGET_COL_&amp;gt;
+	Matrix&amp;lt;TNUMBER, ROW_, TARGET_COL_&amp;gt; Multiply(const Matrix&amp;lt;TNUMBER, COL_, TARGET_COL_&amp;gt;&amp;amp; target) const;
+
+	template &amp;lt;int X_, int Y_&amp;gt;
+	void Set(TNUMBER data);
+	template &amp;lt;int X_, int Y_&amp;gt;
+	TNUMBER Get() const;
+	void Set(int x, int y, TNUMBER data);
+	TNUMBER Get(int x, int y) const;
+
+	template &amp;lt;typename TContainer&amp;gt;
+	void Reset(TContainer&amp;amp; data);
+	template &amp;lt;typename TContainer&amp;gt;
+	void Reset(TContainer&amp;amp;&amp;amp; data);
+	const std::vector&amp;lt;TNUMBER&amp;gt;&amp;amp; Data() const;
+	constexpr int Row() const;
+	constexpr int Column() const;
+	constexpr int Size() const;
+
+private:
+	std::vector&amp;lt;TNUMBER&amp;gt; _data;
+	static constexpr int _SIZE{ ROW_ * COL_ };
+};
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Matrix() {
+	static_assert(!std::is_class_v&amp;lt;TNUMBER&amp;gt;, &quot;TNUMBER type error&quot;);
+	_data.resize(_SIZE, 0);
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Matrix(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) {
+	_data = target._data;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Matrix(Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp;&amp;amp; target) {
+	_data = std::move(target._data);
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Matrix(std::initializer_list&amp;lt;TNUMBER&amp;gt;&amp;amp;&amp;amp; data) {
+	Reset(std::move(data));
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Matrix(std::vector&amp;lt;TNUMBER&amp;gt;&amp;amp;&amp;amp; data) {
+	Reset(std::move(data));
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+bool Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator==(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const {
+	return _data == target._data;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+bool Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator!=(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const {
+	return _data != target._data;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator=(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) {
+	_data = target._data;
+	return *this;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator+(TNUMBER num) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] += num;
+	}
+	return ret;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator-(TNUMBER num) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] -= num;
+	}
+	return ret;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator*(TNUMBER num) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] *= num;
+	}
+	return ret;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator/(TNUMBER num) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] /= num;
+	}
+	return ret;
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator+(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] += target._data[i];
+	}
+	return ret;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::operator-(const Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;&amp;amp; target) const {
+	auto ret = *this;
+	for (int i = 0; i &amp;lt; _SIZE; ++i) {
+		ret._data[i] += target._data[i];
+	}
+	return ret;
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+template &amp;lt;int TARGET_COL_&amp;gt;
+Matrix&amp;lt;TNUMBER, ROW_, TARGET_COL_&amp;gt; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Multiply(const Matrix&amp;lt;TNUMBER, COL_, TARGET_COL_&amp;gt;&amp;amp; target) const {
+	constexpr int tsize = ROW_ * TARGET_COL_;
+	std::vector&amp;lt;TNUMBER&amp;gt; retData;
+	retData.reserve(tsize);
+	for (int i = 0; i &amp;lt; ROW_; ++i) {
+		for (int j = 0; j &amp;lt; TARGET_COL_; ++j) {
+			TNUMBER val = (TNUMBER)0;
+			for (int k = 0; k &amp;lt; COL_; ++k) {
+				int indexA = i * COL_ + k;
+				int indexB = k * TARGET_COL_ + j;
+				val += (_data[indexA] * target.Data()[indexB]);
+			}
+			retData.emplace_back(val);
+		}
+	}
+	return Matrix&amp;lt;TNUMBER, ROW_, TARGET_COL_&amp;gt;(retData);
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+template &amp;lt;int X_, int Y_&amp;gt;
+void Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Set(TNUMBER data) {
+	static_assert(X_ &amp;gt;= 0 &amp;amp;&amp;amp; X_ &amp;lt; COL_ &amp;amp;&amp;amp; Y_ &amp;gt;= 0 &amp;amp;&amp;amp; Y_ &amp;lt; ROW_, &quot;out of range&quot;);
+	constexpr int index = Y_ * ROW_ + X_;
+	_data[index] = data;
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+template &amp;lt;int X_, int Y_&amp;gt;
+TNUMBER Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Get() const {
+	static_assert(X_ &amp;gt;= 0 &amp;amp;&amp;amp; X_ &amp;lt; COL_ &amp;amp;&amp;amp; Y_ &amp;gt;= 0 &amp;amp;&amp;amp; Y_ &amp;lt; ROW_, &quot;out of range&quot;);
+	constexpr int index = Y_ * ROW_ + X_;
+	return _data[index];
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+void Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Set(int x, int y, TNUMBER data) {
+	assert(x &amp;lt; COL_ &amp;amp;&amp;amp; y &amp;lt; ROW_ &amp;amp;&amp;amp; &quot;out of range&quot;);
+	int index = y * ROW_ + x;
+	_data[index] = data;
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+TNUMBER Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Get(int x, int y) const {
+	assert(x &amp;lt; COL_ &amp;amp;&amp;amp; y &amp;lt; ROW_ &amp;amp;&amp;amp; &quot;out of range&quot;);
+	int index = y * ROW_ + x;
+	return _data[index];
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+template &amp;lt;typename TContainer&amp;gt;
+void Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Reset(TContainer&amp;amp; data) {
+	Reset(TContainer(data));
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+template &amp;lt;typename TContainer&amp;gt;
+void Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Reset(TContainer&amp;amp;&amp;amp; data) {
+	static_assert(!std::is_class_v&amp;lt;TNUMBER&amp;gt;, &quot;TNUMBER type error&quot;);
+	if (data.size() == _SIZE) {
+		_data = std::move(data);
+	}
+	else if (data.size() &amp;gt; _SIZE) {
+		assert(!&quot;Matrix init warning!&quot;);
+		_data.reserve(_SIZE);
+		_data.insert(_data.end(), data.begin(), data.begin() + _SIZE);
+	}
+	else if (data.size() &amp;lt; _SIZE) {
+		assert(!&quot;Matrix init warning!&quot;);
+		_data.reserve(_SIZE);
+		_data = std::move(data);
+		for (int i = 0; i &amp;lt; _SIZE - data.size(); ++i) {
+			_data.emplace_back((TNUMBER)0);
+		}
+	}
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+const std::vector&amp;lt;TNUMBER&amp;gt;&amp;amp; Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Data() const {
+	return _data;
+}
+
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+constexpr int Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Row() const {
+	return ROW_;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+constexpr int Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Column() const {
+	return COL_;
+}
+template &amp;lt;typename TNUMBER, int ROW_, int COL_&amp;gt;
+constexpr int Matrix&amp;lt;TNUMBER, ROW_, COL_&amp;gt;::Size() const {
+	return _SIZE;
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>广度优先遍历</title><link>https://xmfrostless.github.io/posts/code/algorithm/bfs/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/algorithm/bfs/</guid><description>广度优先是遍历图的方式之一，在游戏开发中...</description><pubDate>Fri, 30 Jun 2023 09:14:52 GMT</pubDate><content:encoded>&lt;p&gt;广度优先是遍历图的方式之一，在游戏开发中，广度优先常常用在路径搜索，例如自动寻路、AI行动、战棋走格子。著名的A*算法也是基于广度优先的算法。&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;什么是广度优先遍历?&lt;/h2&gt;
+&lt;p&gt;广度优先遍历就是从一个起始点开始，先遍历周围的子节点，再遍历子节点周围的节点，按顺序层层递进，直到全部遍历完。&lt;/p&gt;
+&lt;h2&gt;用树形结构解释&lt;/h2&gt;
+&lt;p&gt;树也是图的一种，使用二叉树来展示更加简单、容易理解，从根节点开始遍历，如下图：
+&lt;img src=&quot;img1.gif&quot; alt=&quot;图1&quot; /&gt;
+得到的结果是[1,2,3,4,5,6,7]&lt;/p&gt;
+&lt;h2&gt;代码实现&lt;/h2&gt;
+&lt;p&gt;实现思路为使用一个队列来维护遍历的顺序，先根再左右子节点，依次添加到队尾，从队首逐个拿取。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 创建一个节点用于表示二叉树的结构
+class Node {
+	public int value = 0; // 值
+	public Node left = null; // 左子节点
+	public Node right = null; // 右子节点
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 输出广度优先遍历的结果
+void PrintBFS(Node root) {
+	// 保存遍历顺序的队列
+	var queue = new Queue&amp;lt;Node&amp;gt;();
+	// 入队根节点
+	queue.Enqueue(root);
+	while (queue.Count &amp;gt; 0) {
+		// 出队一个节点
+		var node = queue.Dequeue();
+
+		// 打印当前节点的值
+		Console.Write(node.value);
+
+		// 将左子节点入队
+		if (node.left != null) {
+			queue.Enqueue(node.left);
+		}
+		// 将右子节点入队
+		if (node.right != null) {
+			queue.Enqueue(node.right);
+		}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;void main() {
+	// 创建上图所示的二叉树
+	var nodes = new Node[7];
+	for (var i = 0; i &amp;lt; 7; ++i) {
+		nodes[i] = new Node();
+		nodes[i].value = i + 1;
+	}
+	// node[0]是根节点，并分配所有子节点
+	nodes[0].left = nodes[1];
+	nodes[0].right = nodes[2];
+	nodes[1].left = nodes[3];
+	nodes[1].right = nodes[4];
+	nodes[2].left = nodes[5];
+	nodes[2].right = nodes[6];
+
+	// 调用输出
+	PrintBFS(nodes[0]); // 结果：1234567
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;从A-&amp;gt;B的路径&lt;/h2&gt;
+&lt;p&gt;有了上面的基础，这个就比较容易了，可以写一个方法，传入两个参数，在遍历时找到目标后停止遍历，并返回结果就好了&lt;/p&gt;
+&lt;p&gt;最后，在地图应用中，节点之间会有更加复杂的连接关系，实现思路都是一样的。&lt;/p&gt;
+</content:encoded></item><item><title>Unity中的Mesh网格</title><link>https://xmfrostless.github.io/posts/code/unity/mesh/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/mesh/</guid><pubDate>Tue, 13 Dec 2022 12:46:48 GMT</pubDate><content:encoded>&lt;p&gt;Mesh是计算机模型的网格结构，由点线面组成的形状来表现的，在建模的过程中就是在操作这些点线面的坐标和大小等信息来做出想要的模型形状&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;img0.jpeg&quot; alt=&quot;img0&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;Unity Mesh属性和用法&lt;/h2&gt;
+&lt;h3&gt;属性&lt;/h3&gt;
+&lt;p&gt;三角形是构成面的最小图形，所以Mesh是由一个个三角形组成的网格&lt;br /&gt;
+&lt;strong&gt;顶点集合 vertices：&lt;/strong&gt; 组成几何图形的点的坐标的集合&lt;br /&gt;
+&lt;strong&gt;三角形集合 trangles：&lt;/strong&gt; 组成三角形的顶点序号集合&lt;br /&gt;
+&lt;strong&gt;法线集合 normals：&lt;/strong&gt; 每个顶点的法线&lt;br /&gt;
+&lt;strong&gt;纹理坐标 uv&lt;/strong&gt; 顶点和纹理贴图的位置关系&lt;/p&gt;
+&lt;h3&gt;用法&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&quot;img1.png&quot; alt=&quot;img1&quot; /&gt;&lt;br /&gt;
+如图的四边形，四个点的坐标分别为：
+A(0, 0, 0)
+B(0, 1, 0)
+C(1, 0, 0)
+D(1, 1, 0)&lt;/p&gt;
+&lt;p&gt;在Mesh中，ABCD四个点为顶点，按照三角形为单位绘制，四边形是由两个三角形组成，绘制时按顺时针的顺序，即T1(ABC),T2(CBD)&lt;/p&gt;
+&lt;p&gt;所以代码中：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 顶点坐标
+vertices[0] = new Vector3(0, 0, 0); // A
+vertices[1] = new Vector3(0, 1, 0); // B
+vertices[2] = new Vector3(1, 0, 0); // C
+vertices[3] = new Vector3(1, 1, 0); // D
+// 三角形绘制顺序
+triangles = {
+	0, 1, 2, // ABC
+	2, 1, 3  // CBD
+}
+// 赋值  
+mesh.vertices = vertices;
+mesh.triangles = triangles;
+// 更新法线
+mesh.RecalculateNormals();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;在Unity中，自定义Mesh通过组件&lt;code&gt;MeshFilter&lt;/code&gt;来设置数据，通过&lt;code&gt;MeshRenderer&lt;/code&gt;来绘制图形&lt;/p&gt;
+</content:encoded></item><item><title>C#中问号“?”在语法中的作用以及在Unity中的注意事项</title><link>https://xmfrostless.github.io/posts/code/csharp/questioncharsymbol/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/csharp/questioncharsymbol/</guid><pubDate>Fri, 15 Oct 2021 13:42:34 GMT</pubDate><content:encoded>&lt;p&gt;在C#语法中,问号”?“用来判断一个对象是否为空,如果不为空就继续调用,否则不执行任何操作&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用方法&lt;/strong&gt;
+假设有一个对象&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public class MyObject {
+    public string value { get; set; } = &quot;MyObject&quot;;
+    public void Print() {
+        Debug.Log(value);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;模拟一个情景&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;MyObject obj = null;
+// 这里假如随机到0则创建对象,否则不创建
+if (Random.Range(0, 2) == 0) {
+    obj = new MyObject();
+}
+// 如果obj不为null则调用Print
+if (obj != null) {
+    obj.Print();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;使用问号“?”语法替代上面的情景&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 如果obj不为null则调用Print
+obj?.Print();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这样起到一个简化代码的作用&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;“??”的使用&lt;/strong&gt;
+还是上面的&lt;code&gt;MyObject&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;string tempValue = obj?.value??&quot;temp&quot;;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;上面的代码相当于&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;string tempValue;
+if (obj != null) {
+    tempValue = obj.value;
+} else {
+    tempValue = &quot;temp&quot;;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;在Unity中使用时需要注意&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public class MyAnimation : MonoBehaviour {
+    public void Play() {
+        // ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;假如我们需要获取一个自定义组件,但并不知道这个组件是否存在,例如:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var myAnimation = GetComponent&amp;lt;MyAnimation&amp;gt;();
+myAnimation?.Play(); // 如果存在则调用Play方法
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;上面的调用是没有问题的,但是需要注意的是,在Unity中调用引擎自带的组件时,那么问题就来了,例如:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var ps = GetComponent&amp;lt;ParticleSystem&amp;gt;();
+ps?.Play(); // 这里会报错
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;报错如下:
+&lt;img src=&quot;img1.png&quot; alt=&quot;error_img&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;按道理说,&lt;code&gt;ps?.Play();&lt;/code&gt;的调用,如果没有找到则不执行,但问题就在,实际上这个&lt;code&gt;ps&lt;/code&gt;对象并不是真正的&lt;code&gt;null&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Unity在使用&lt;code&gt;GetComponent&lt;/code&gt;调用内部组件时,即使当前对象没有包含该组件,也不会返回&lt;code&gt;null&lt;/code&gt;,而是返回一个UnityEngine.Object意义上的&quot;空&quot;对象,而UnityEngine.Object重写了==,!=相关的操作符,使得我们使用if去判断时可以正确执行,而使用&lt;code&gt;?&lt;/code&gt;符号去执行时并不会调用重写的操作符因此就出错了&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;所以在使用&lt;code&gt;GetComponent&lt;/code&gt;调用内部组件时,不要再使用&lt;code&gt;?&lt;/code&gt;符号了,对于自己写的脚本则可以继续使用&lt;/strong&gt;&lt;/p&gt;
+</content:encoded></item><item><title>C++泛型编程之类型的静态与动态检查</title><link>https://xmfrostless.github.io/posts/code/cpp/templatetypecheck/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/templatetypecheck/</guid><description>假如某个模板我希望传入的参数必须是int而不能是float时,如果不对就不允许通过编译怎么做?</description><pubDate>Tue, 11 Aug 2020 11:15:41 GMT</pubDate><content:encoded>&lt;p&gt;著名C++大师Scott在&lt;code&gt;&amp;lt;&amp;lt;Effective C++&amp;gt;&amp;gt;&lt;/code&gt;一书中说过,C++可以看成是一个语言联邦,由4部分组成,分别是C语言,面向对象,STL标准模板库和泛型(模板).由此可见泛型在C++中的地位.
+使用模板可以减少大量代码重复,可以使方法在使用上更加通用和舒适.但使用模板仍然不可避免会出现一些问题,比如我希望传入的参数必须是const char*而不能是std::string时.所以本篇文章讲解如何实现模板类型检查.&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;模板特化&lt;/h2&gt;
+&lt;p&gt;要想实现对类型的检查,这里就得用到模板特化.模板特化就是给模板特例,针对你指定的类型生成不同的代码.&lt;/p&gt;
+&lt;p&gt;例如:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 模板方法
+template &amp;lt;typename T&amp;gt;
+bool Equal(T a, T b) {
+    return a == b;
+}
+// 特化版本
+template &amp;lt;&amp;gt;
+bool Equal&amp;lt;char*&amp;gt;(char* a, char* b) {
+    return (strcmp(a, b) == 0);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Equal&lt;/code&gt;方法用于判断两个值是否相等,但是对于C字符串时,我们不能直接使用&lt;code&gt;==&lt;/code&gt;来判断,所以需要特化一个版本,当类型为char*的时候,就会调用这个特化版本.&lt;/p&gt;
+&lt;h2&gt;静态检查&lt;/h2&gt;
+&lt;p&gt;静态检查就是在编译期间检查,若有问题则无法通过编译,并提示目标位置,一般原则是能在编译期间解决的问题则不应该放到运行时解决,所以最好是能够在编译期就阻止一切出错的可能.&lt;/p&gt;
+&lt;p&gt;那么对于模板类型检查,也是可以放到编译期间来检查的,当传入的参数不符合要求时,则不能通过编译,下面以一个简单的例子来说明:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 一个模板类
+template &amp;lt;typename T&amp;gt;
+struct CheckType { };
+// 特化一个int版本
+template &amp;lt;&amp;gt;
+struct CheckType&amp;lt;int&amp;gt; {
+    enum { IsInt = 1 };
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;针对上面的例子,就可以静态检查类型是否为&lt;code&gt;int&lt;/code&gt;了,例如有一个模板,我们限制参数必须为int时,就可以这么用了:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;template &amp;lt;typename T&amp;gt;
+void Test(T value) {
+    static_assert(CheckType&amp;lt;T&amp;gt;::IsInt, &quot;The type isn&apos;t int&quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;当类型不为int时,因为根本没有&lt;code&gt;IsInt&lt;/code&gt;这个值,因此就会报错,并打印信息,根据编译器的报错就可以轻松找到出错的位置了,那对于其他类型,就需要一一特化,这里就不详细写了&lt;/p&gt;
+&lt;h2&gt;动态检查&lt;/h2&gt;
+&lt;p&gt;有时候,静态检查并不能满足需求,需要在运行时检查,代码如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;template &amp;lt;typename T1, typename T2&amp;gt;
+struct CheckTypeSame {
+	enum { value = 0 };
+};
+// 特化版本
+template &amp;lt;typename T&amp;gt;
+struct CheckTypeSame&amp;lt;T, T&amp;gt; {
+	enum { value = 1 };
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;当两个类型不同时,会调用通用版本,因此&lt;code&gt;value&lt;/code&gt;的值为0, 当类型相同时则会走特化版本,此时&lt;code&gt;value&lt;/code&gt;值为1,所以通过判断&lt;code&gt;value&lt;/code&gt;的值就可以确定两个类型是否一样了,调用方法如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 这里用一个简单例子说明动态判断类型
+template &amp;lt;typename T&amp;gt;
+void Print(T value) {
+    if (CheckTypeSame&amp;lt;T, int&amp;gt;::value) {
+        printf(&quot;value is int&quot;);
+    } else {
+        printf(&quot;value isn&apos;t int&quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>C#中使用out参数时需要注意的点</title><link>https://xmfrostless.github.io/posts/code/csharp/outparam/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/csharp/outparam/</guid><pubDate>Mon, 08 Jun 2020 10:15:55 GMT</pubDate><content:encoded>&lt;p&gt;说说C#中out关键字的作用和需要注意的地方&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;out关键字&lt;/h2&gt;
+&lt;p&gt;表示这个参数由函数来&lt;strong&gt;决定其值&lt;/strong&gt;,类似一个返回值,一般应用在某个函数需要多个返回值的场景,例如常用的内置方法&lt;code&gt;TryGetValue&amp;lt;TK, TV&amp;gt;(TK key, out TV value)&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var _valueDict = new Dictionary&amp;lt;int, int&amp;gt;();
+int value;
+if (_valueDict.TryGetValue(10, out value)) {
+	// todo...
+	// print(value);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;注意&lt;/h2&gt;
+&lt;p&gt;划重点,out的机制是由函数决定其值,所以在执行函数之前的赋值将无效,视为额外的代码开销,下面展示一段错误的书写方式:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var _valueDict = new Dictionary&amp;lt;int, int&amp;gt;();
+// ...
+int GetValue(int key) {
+	int value = -1; // 假设我希望默认值是-1
+	if (_valueDict.TryGetValue(key, out value)) {
+		// todo...
+	}
+	return value;
+}
+// ...
+int ret = GetValue(10);
+if (ret == -1) {
+	// todo...
+	// ret的值是多少呢?
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;根据out的特性,由函数内部决定其值,所以如果&lt;code&gt;TryGetValue&lt;/code&gt;没有找到时,value并不等于之前的值,而是其他值,可能为0,但我更愿意理解为未定义的值,假设你的参数是一个class或者struct呢?假设是其他第三方库写的方法呢?这完全依赖于内部实现,所以最好的办法是:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var _valueDict = new Dictionary&amp;lt;int, int&amp;gt;();
+int value;
+if (!_valueDict.TryGetValue(10, out value)) {
+	value = -1;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;对于一个书写习惯良好的程序员来说,任何声明都应该赋初值,我也有这个习惯,所以上面的&lt;code&gt;int value;&lt;/code&gt;显得非常不舒服,但在这里的确不建议赋初值,因为赋值没有意义且会增加额外的开销,所以C#提供了另一种写法,解决了这个问题,out后可跟声明符:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var _valueDict = new Dictionary&amp;lt;int, int&amp;gt;();
+if (!_valueDict.TryGetValue(10, out var value)) {
+	value = -1;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;最后谈谈ref关键字&lt;/h2&gt;
+&lt;p&gt;其实out与ref的意义不同,但是同样作为参数修饰,可以放到一起谈谈,ref更像是通常意义上(C++中)的引用,它表示一个参数作为引用传递到函数内部,函数内部可以使用该值也可以对其进行赋值,当然也可以不赋值,所以在使用ref时,这个参数在函数调用之前的赋值是有效的,那么说到区别,out是强调这个值一定是会被赋值的,而ref则更通用一些.&lt;/p&gt;
+</content:encoded></item><item><title>如何在VSCode中配置C++开发环境</title><link>https://xmfrostless.github.io/posts/code/cpp/vscodeconfig/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/vscodeconfig/</guid><description>由于CMake语法晦涩难记,VSCode可以通过配置任务的方式来实现自动化</description><pubDate>Tue, 21 Apr 2020 23:28:22 GMT</pubDate><content:encoded>&lt;p&gt;VSCode本身是一个文本编辑器,VSCode中开发C++本质上是通过调用编译器的命令来编译和生成可执行文件,由于CMake语法晦涩难记,VSCode可以通过配置任务的方式来实现自动化,简化操作,一键调用配置好的命令,从而提高效率.&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;g++/clang++&lt;/h2&gt;
+&lt;p&gt;在配置之前需要知道,g++是c++的编译器,我的Mac上因为安装了Xcode所以已经被安装了,如果系统上没有需要手动安装
+另:clang++也是一种c++编译器&lt;/p&gt;
+&lt;p&gt;在安装完c++编译器之后,就可以通过命令行调用它来编译C++项目了,但是这样显然不太方便,这就需要vscode了&lt;/p&gt;
+&lt;h2&gt;vscode配置&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;C/C++插件&lt;/strong&gt;&lt;br /&gt;
+在vscode的插件一栏搜索&lt;code&gt;C++&lt;/code&gt;,找到作者为Microsoft的那一个插件并安装,一般是第一个&lt;code&gt;C/C++&lt;/code&gt;
+这个插件的作用是什么呢,目前我知道的是,代码提示,代码跳转,调试&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;新建项目&lt;/strong&gt;&lt;br /&gt;
+新建一个文件夹,这里新建几个cpp文件,随便写点什么,例如:
+&lt;strong&gt;&lt;code&gt;Student.h&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#include &amp;lt;string&amp;gt;
+class Student
+{
+public:
+	void Show();
+	void Set(int age, const std::string&amp;amp; name);
+private:
+	int _age{ 20 };
+	std::string _name;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;Student.cpp&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#include &quot;student.h&quot;
+#include &amp;lt;iostream&amp;gt;
+
+void Student::Show()
+{
+	std::cout &amp;lt;&amp;lt; _name &amp;lt;&amp;lt; &quot;:&quot; &amp;lt;&amp;lt; _age &amp;lt;&amp;lt; std::endl;
+}
+
+void Student::Set(int age, const std::string &amp;amp;name)
+{
+	_age = age;
+	_name = name;
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;main.cpp&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#include &quot;student.h&quot;
+
+int main(int argc, char **argb)
+{
+	auto stu = new Student();
+	stu-&amp;gt;Set(27, &quot;Jack&quot;);
+	stu-&amp;gt;Show();
+
+	return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;编译配置&lt;/strong&gt;&lt;br /&gt;
+项目创建之后,就需要编译了,在vscode下按&lt;code&gt;F1&lt;/code&gt;或者&lt;code&gt;Ctrl/Cmd+Shift+P&lt;/code&gt;,输入&lt;code&gt;Tasks: Configure Task&lt;/code&gt;确定,然后如果有选项选择&lt;code&gt;c/c++:g++&lt;/code&gt;那一项,这时会在&lt;code&gt;.vscode&lt;/code&gt;目录下新建一个&lt;code&gt;tasks.json&lt;/code&gt;文件,文件默认内容如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+	&quot;type&quot;: &quot;shell&quot;, // &quot;shell&quot;表示这个任务是一个shell命令
+	&quot;label&quot;: &quot;C/C++: g++ build active file&quot;, // 这个任务的名称
+	&quot;command&quot;: &quot;/usr/bin/g++&quot;, // g++编译器的可执行文件位置
+	&quot;args&quot;: [ // g++命令后跟的参数
+		&quot;-g&quot;, // -g我的理解是省略一系列例如编译,汇编,链接等命令,直接生成机器码
+		&quot;${file}&quot;, // 待编译的目标文件
+		&quot;-o&quot;, // 生成可执行文件到下面指定的文件中
+		&quot;${fileDirname}/${fileBasenameNoExtension}&quot; // 可执行文件名
+	],
+	&quot;options&quot;: {
+		&quot;cwd&quot;: &quot;/usr/bin&quot; // 默认的根目录
+	},
+	&quot;problemMatcher&quot;: [
+		&quot;$gcc&quot;
+	],
+	&quot;group&quot;: &quot;build&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;我们要修改其中的某些参数(仅列出修改的对象):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+	&quot;args&quot;: [
+		&quot;-g&quot;,
+		&quot;-std=c++17&quot;, // 增加这行,表示支持c++17
+		// &quot;${file}&quot;, // 删除这行,这里的${file}表示当前打开的文件,我们不需要
+		&quot;**/*.cpp&quot;, // 增加这行,表示当前目录下的所有cpp文件都参与编译(可手动配置)
+		&quot;-o&quot;,
+		&quot;${workspaceRootFolderName}&quot; // 设置为项目文件夹名称
+	],
+	&quot;options&quot;: {
+		&quot;cwd&quot;: &quot;${workspaceFolder}&quot; // 修改为当前项目根目录
+	},
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;只有当&lt;code&gt;options.cwd&lt;/code&gt;设置为&lt;code&gt;${workspaceFolder}&lt;/code&gt;时,&lt;code&gt;args&lt;/code&gt;中的文件名则不用设置为绝对路径,这样比较方便&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;编译生成可执行文件&lt;/strong&gt;&lt;br /&gt;
+上面的配置设置完毕之后,只要按&lt;code&gt;Ctrl/Cmd+Shift+B&lt;/code&gt;执行任务之后,就会在当前目录下生成一个文件夹同名的可执行文件,直接运行就可以了&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;调试&lt;/strong&gt;&lt;br /&gt;
+在vscode调试选项下点击创建&lt;code&gt;launch.json&lt;/code&gt;,会弹出一个菜单项,选择&lt;code&gt;C++ (GDB/LLDB)&lt;/code&gt;,会在&lt;code&gt;.vscode&lt;/code&gt;目录下创建一个&lt;code&gt;launch.json&lt;/code&gt;文件,内容如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&quot;configurations&quot;: [
+	{
+		&quot;name&quot;: &quot;(lldb) 启动&quot;,
+		&quot;type&quot;: &quot;cppdbg&quot;,
+		&quot;request&quot;: &quot;launch&quot;,
+		// &quot;program&quot;: &quot;输入程序名称，例如 ${workspaceFolder}/a.out&quot;, // 删除这行
+		&quot;program&quot;: &quot;${workspaceFolder}/${workspaceRootFolderName}&quot;, // 修改成这行,这个对象的含义是指定可执行文件
+		&quot;args&quot;: [],
+		&quot;stopAtEntry&quot;: false,
+		&quot;cwd&quot;: &quot;${workspaceFolder}&quot;,
+		&quot;environment&quot;: [],
+		&quot;externalConsole&quot;: false,
+		&quot;MIMode&quot;: &quot;lldb&quot;
+	}
+]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;配置完成后,就可以按&lt;code&gt;F5&lt;/code&gt;运行和调试了&lt;/p&gt;
+&lt;p&gt;那么本篇就到这里了&lt;/p&gt;
+</content:encoded></item><item><title>多对多绑定的手柄/键盘输入系统</title><link>https://xmfrostless.github.io/posts/code/unity/inputsystem/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/inputsystem/</guid><description>如何开发能够支持用户自定义按钮绑定的输入系统?</description><pubDate>Fri, 10 Apr 2020 13:32:04 GMT</pubDate><content:encoded>&lt;p&gt;为了解决一些需求,比如上下左右在地图上是控制角色移动,在菜单界面是控制选项,又比如同样是攻击操作,在键盘上是&lt;code&gt;J&lt;/code&gt;键,在手柄上是&lt;code&gt;X&lt;/code&gt;键,再比如可以让玩家自定义按键关系,所以就有了这样一个多对多的输入系统.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;设计思路&lt;/li&gt;
+&lt;li&gt;调用方式&lt;/li&gt;
+&lt;li&gt;实现&lt;/li&gt;
+&lt;li&gt;完整源码&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;设计思路&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;一个数组表示按键与命令的绑定关系&lt;/li&gt;
+&lt;li&gt;一个键值对容器表示命令与命令对象的关系&lt;/li&gt;
+&lt;li&gt;使用时通过命令获取状态&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;InputSystem 调用三步走&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;1. 定义命令&lt;/strong&gt;&lt;br /&gt;
+自定义的命令枚举:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public enum InputCommand {
+	Attack, // 攻击
+	MoveUp, // 向上移动
+	MenuUp, // 菜单上一个
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;2. 注册命令和按键绑定关系&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;private void Start() {
+	// 添加绑定关系 (键盘按键J - Attack命令)
+	InputSystem.AddButtonBind(KeyCode.J, (int) InputCommand.Attack);
+	// 添加绑定关系 (按键名attack) - Attack命令)
+	InputSystem.AddButtonBind(&quot;attack&quot;, (int) InputCommand.Attack);
+
+	// 添加绑定关系 (键盘按键W - 向上移动命令)
+	InputSystem.AddButtonBind(KeyCode.W, (int) InputCommand.MoveUp);
+	// 添加绑定关系 (键盘按键W - 菜单上一个命令)
+	InputSystem.AddButtonBind(KeyCode.W, (int) InputCommand.MenuUp);
+	// 添加绑定关系 (键盘按键↑箭头 - 菜单上一个命令)
+	InputSystem.AddButtonBind(KeyCode.UpArrow, (int) InputCommand.MenuUp);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;3. Uppublished判断命令状态,执行逻辑&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;private void Uppublished() {
+	// 调用Uppublished方法,因为是摘取片段因此放到这里,实际上全局只用调用一次即可
+	InputSystem.Uppublished();
+	
+	// 获取命令的键值
+	var attackValue = InputSystem.GetButtonValue((int) InputCommand.Attack);
+	var moveUpValue = InputSystem.GetButtonValue((int) InputCommand.MoveUp);
+	var menuUpValue = InputSystem.GetButtonValue((int) InputCommand.MenuUp);
+
+	// 是否按下
+	if (attackValue.down) {
+		Debug.Log(&quot;attack down&quot;);
+	}
+	// 是否松开
+	if (attackValue.up) {
+		Debug.Log(&quot;attack up&quot;);
+	}
+	// 是否保持
+	if (attackValue.hold) {
+		Debug.Log(&quot;attack hold&quot;);
+	}
+
+	// 其他同理...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h2&gt;实现&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Unity提供了Input类来监听按键的消息,并且提供了两种方式来指定按键键值,一种是通过&lt;code&gt;KeyCode&lt;/code&gt;,另一种是通过在编辑器中提前配置好的&lt;code&gt;button-name&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;命令采用int类型,主要是和enum兼容比较好,也方便了自定义命令&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;绑定关系的数组:&lt;/strong&gt;
+按键对应命令&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// keycode
+List&amp;lt;KeyValuePair&amp;lt;KeyCode, int&amp;gt;&amp;gt; _keyboardBinds;
+// button-name
+List&amp;lt;KeyValuePair&amp;lt;string, int&amp;gt;&amp;gt; _binds;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h5&gt;添加绑定关系的方法&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;/// &amp;lt;summary&amp;gt;
+/// 添加按键绑定,多对多
+/// &amp;lt;para&amp;gt;支持一个按键绑定多个命令&amp;lt;/para&amp;gt;
+/// &amp;lt;para&amp;gt;支持多个按键绑定一个命令&amp;lt;/para&amp;gt;
+/// &amp;lt;/summary&amp;gt;
+/// &amp;lt;param name=&quot;eventName&quot;&amp;gt;事件名称&amp;lt;/param&amp;gt;
+/// &amp;lt;param name=&quot;command&quot;&amp;gt;命令&amp;lt;/param&amp;gt;
+public static ButtonValue AddButtonBind(string eventName, int command) {
+	_binds.Add(new KeyValuePair&amp;lt;string, int&amp;gt;(eventName, command));
+	return GetButtonValue(command);
+}
+
+/// &amp;lt;summary&amp;gt;
+/// 添加按键绑定,多对多
+/// &amp;lt;para&amp;gt;支持一个按键绑定多个命令&amp;lt;/para&amp;gt;
+/// &amp;lt;para&amp;gt;支持多个按键绑定一个命令&amp;lt;/para&amp;gt;
+/// &amp;lt;/summary&amp;gt;
+/// &amp;lt;param name=&quot;code&quot;&amp;gt;按键code&amp;lt;/param&amp;gt;
+/// &amp;lt;param name=&quot;command&quot;&amp;gt;命令&amp;lt;/param&amp;gt;
+public static ButtonValue AddButtonBind(KeyCode code, int command) {
+	_keyboardBinds.Add(new KeyValuePair&amp;lt;KeyCode, int&amp;gt;(code, command));
+	return GetButtonValue(command);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h5&gt;命令对象 ButtonValue&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;ButtonValue&lt;/code&gt;类,就是用来保存和管理按键状态的,有down(按下),up(弹起),hold(保持)三种状态&lt;br /&gt;
+提供两个方法,&lt;code&gt;OrState&lt;/code&gt;用于设置按键状态,&lt;code&gt;Reset&lt;/code&gt;用于初始化状态&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public class ButtonValue {
+	public bool down { get; private set; } = false;
+	public bool up { get; private set; } = false;
+	public bool hold { get; private set; } = false;
+	// OrState使用或关系来赋值状态,因为可能多个按键绑定了同一个命令,都会触发
+	public void OrState(bool down, bool up, bool hold) {
+		this.down |= down;
+		this.up |= up;
+		this.hold |= hold;
+	}
+	public void Reset() {
+		down = false;
+		up = false;
+		hold = false;
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;p&gt;一个命令则对应一个ButtonValue&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Dictionary&amp;lt;int, ButtonValue&amp;gt; _commands;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h5&gt;实现&lt;code&gt;GetButtonValue&lt;/code&gt;方法&lt;/h5&gt;
+&lt;p&gt;凡是存在一个&lt;code&gt;GetButtonValue(command)&lt;/code&gt;的调用,就认定这个命令是存在的,这样的机制会更加的自由,并且会使得调用层不需要去考虑这个对象是否存在&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/// &amp;lt;summary&amp;gt;
+/// 获取命令的按键值
+/// &amp;lt;/summary&amp;gt;
+/// &amp;lt;param name=&quot;command&quot;&amp;gt;命令&amp;lt;/param&amp;gt;
+public static ButtonValue GetButtonValue(int command) {
+	ButtonValue ret = null;
+	// 从Dictionary中查找,如果没有就创建一个
+	if (!_commands.TryGetValue(command, out ret)) {
+		ret = new ButtonValue();
+		_commands.Add(command, ret);
+	}
+	return ret;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h5&gt;实现Uppublished方法,更新所有命令的状态&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;public static void Uppublished() {
+	// 首先重置所有命令的状态
+	foreach (var item in _commands) {
+		item.Value.Reset();
+	}
+	// 遍历所有的绑定关系,并更新对应命令的按键状态
+	foreach (var item in _binds) {
+		GetButtonValue(item.Value).OrState(
+			Input.GetButtonDown(item.Key),
+			Input.GetButtonUp(item.Key),
+			Input.GetButton(item.Key));
+	}
+	foreach (var item in _keyboardBinds) {
+		GetButtonValue(item.Value).OrState(
+			Input.GetKeyDown(item.Key),
+			Input.GetKeyUp(item.Key),
+			Input.GetKey(item.Key));
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这个&lt;code&gt;Uppublished&lt;/code&gt;在使用时,只需要在一个总的管理系统内调用一次&lt;/p&gt;
+</content:encoded></item><item><title>Unity AssetBundle</title><link>https://xmfrostless.github.io/posts/code/unity/assetbundle/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/assetbundle/</guid><pubDate>Wed, 11 Mar 2020 16:39:55 GMT</pubDate><content:encoded>&lt;p&gt;总结一下Unity中的打包.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;打包&lt;/li&gt;
+&lt;li&gt;使用&lt;/li&gt;
+&lt;li&gt;扩展&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;打包&lt;/h2&gt;
+&lt;p&gt;首先打包AssetBundle需要选择要打包的内容,然后使用打包方法打包.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;第一步 选定打包的内容&lt;/strong&gt;&lt;br /&gt;
+在资源目录内,选中要打包的文件夹或者文件,选择文件夹时,会包含文件夹内的所有内容,选中后,可以看到&lt;code&gt;Inspector&lt;/code&gt;最下方有一个&lt;code&gt;Asset Labels&lt;/code&gt;选项,点击后会出现&lt;code&gt;AssetBundle&lt;/code&gt;选项,有两个下拉列表,前者选择包的文件名,后者选择后缀名&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;step1_1.jpg&quot; alt=&quot;step1&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;已经设置过的名称会出现在列表中,如果需要新建则选择&lt;code&gt;New...&lt;/code&gt;选项,手动输入名称&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;step1_2.jpg&quot; alt=&quot;step1&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;名称支持目录形式,使用&lt;code&gt;/&lt;/code&gt;方式分割,例如&lt;code&gt;audio/sound&lt;/code&gt;表示将&lt;code&gt;sound&lt;/code&gt;包放在&lt;code&gt;audio&lt;/code&gt;文件夹下&lt;/p&gt;
+&lt;p&gt;注意:一个AssetBundle包内的资源文件名不能相同,即使在不同路径下&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;第二步 打包方法调用&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;上一步配置好之后,此时需要调用打包的方法才会生效,打包方法在&lt;code&gt;UnityEditor&lt;/code&gt;的命名空间内,所以这个方法在编辑器环境下使用,打包的方法是&lt;code&gt;BuildPipeline.BuildAssetBundles()&lt;/code&gt;,此方法有3个参数,分别为&lt;code&gt;导出路径,导出选项,目标平台&lt;/code&gt;,参数2一般设置为&lt;code&gt;None&lt;/code&gt;,参数3根据发布的平台设置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;BuildPipeline.BuildAssetBundles(&quot;AssetBundle&quot;, BuildAssetBundleOptions.None, BuildTarget.StandaloneOSX);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Unity支持对编辑器开发扩展应用,将这个方法放到菜单中,以便之后方便调用,在&lt;code&gt;Assets&lt;/code&gt;目录下的&lt;code&gt;Editor&lt;/code&gt;文件夹内新建&lt;code&gt;EditorBuildAssetBundle.cs&lt;/code&gt;,代码如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;using UnityEditor;
+using System.IO;
+
+public class EditorBuildAssetBundle
+{
+	// 在Assets菜单下新建Build AssetBundle菜单
+    [MenuItem(&quot;Assets/Build AssetBundle&quot;)]
+    static void BuildAssets()
+    {
+        string dir = &quot;AssetBundle&quot;;
+        if (!Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+		// 根据需要可以增加多个菜单选项来适应需求
+        BuildPipeline.BuildAssetBundles(dir, BuildAssetBundleOptions.None, BuildTarget.StandaloneOSX);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;通过菜单&lt;code&gt;Assets-&amp;gt;Build AssetBundle&lt;/code&gt;,调用之后就会根据之前的配置将打包后的文件导出在&lt;code&gt;项目/AssetBundle/&lt;/code&gt;下了,比如我设置的&lt;code&gt;bgm&lt;/code&gt;资源&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;step2_1.jpg&quot; alt=&quot;step2&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;关于参数2:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;using System;
+
+public enum BuildAssetBundleOptions
+{
+	None = 0x0, // 不使用任何特殊选项
+	UncompressedAssetBundle = 0x1, // 不压缩
+	CollectDependencies = 0x2, // 包含所有依赖关系
+	CompleteAssets = 0x4, // 强制包括整个资源
+	DisableWriteTypeTree = 0x8, // 不包含类型信息
+	DeterministicAssetBundle = 0x10, // 使用hash id构建
+	ForceRebuildAssetBundle = 0x20, // 强制重新构建
+	IgnoreTypeTreeChanges = 0x40, // 忽略TypeTree的变化
+	AppendHashToAssetBundleName = 0x80, // 将hash附加到资源名称上
+	ChunkBasedCompression = 0x100, // 使用lz4的格式压缩
+	StrictMode = 0x200, // 使用严格模式构建
+	DryRunBuild = 0x400, // 不实际构建资源
+	DisableLoadAssetByFileName = 0x1000, // 不使用资源名称加载
+	DisableLoadAssetByFileNameWithExtension = 0x2000, // 不使用带后缀的文件名加载
+	AssetBundleStripUnityVersion = 0x8000 // 构建期间删除Unity版本号
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;以上参数的具体详细解释请参照Unity官网API的&lt;a href=&quot;https://docs.unity3d.com/ScriptReference/BuildAssetBundleOptions.html&quot;&gt;BuildAssetBundleOptions页面&lt;/a&gt;说明&lt;/p&gt;
+&lt;h2&gt;使用&lt;/h2&gt;
+&lt;p&gt;使用&lt;code&gt;AssetBundle&lt;/code&gt;类来加载和获取资源&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;使用Load系列方法加载资源&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 通过文件名路径加载
+AssetBundle.LoadFromFile();
+// 通过数据流加载
+AssetBundle.LoadFromStream();
+// 通过内存数据加载
+AssetBundle.LoadFromMemory();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;因为资源包会根据不同的需求放在不同的位置,这里的&lt;code&gt;AssetBundle&lt;/code&gt;文件夹位于项目根目录下,并且在Unity编辑器环境下可以直接通过文件相对路径加载,故通过以下方法加载:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var assetBundle = AssetBundle.LoadFromFile(&quot;AssetBundle/bgm&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;对于获取到的&lt;code&gt;assetBundle&lt;/code&gt;对象,里面包含了打包进去的文件,通过如下方法获取:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;var bgmClip = assetBundle.LoadAsset&amp;lt;AudioClip&amp;gt;(&quot;bgm&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;注意:
+不论之前资源在什么目录下的,这里获取资源都只使用文件名获取,这也是为什么之前打包时不能有相同文件名的原因&lt;/p&gt;
+&lt;h2&gt;扩展&lt;/h2&gt;
+&lt;p&gt;AssetBundle在使用时会面临一些问题&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;开发环境和最终发布区分&lt;/strong&gt;&lt;br /&gt;
+开发时,在得到资源后,每次都要打包一下再使用,确实是不利于效率的,很多资源都是需要频繁修改的,所以一般是在最终发布时打包,那么就需要一个管理类来负责这个事情,拿到的资源直接放在指定的目录下,通过对&lt;code&gt;Application.platform&lt;/code&gt;的判断来决定使用何种方式读取资源.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;依赖关系&lt;/strong&gt;&lt;br /&gt;
+比如有a,b两个包,b中的某个资源依赖于a包中的某个资源,如果使用资源时,只加载b而没有加载a的情况下,b中这个资源则会出问题,需要确保a包也加载,解决这种问题,需要从两个方面下手,一方面是项目资源结构上,需要做到良好区分功能,我的观点是通过功能划分资源,这样一个包则包含这个功能的所有文件,就不需要去加载其他包中的内容了. 另一方面是根据资源的通用程度,划分出通用资源,保持一直存在. 复杂的情况下可以写一个资源层级目录,根据目录,在管理器中判断是否已经加载,没有则层层往上,直到依赖项全部加载为止.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;最后&lt;/strong&gt;&lt;br /&gt;
+那么本文就结束了,以上想法都是我的心得和浅见,希望能够帮助到大家.&lt;/p&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(六) - 燃烧效果</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote6/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote6/</guid><pubDate>Wed, 15 Jan 2020 09:08:04 GMT</pubDate><content:encoded>&lt;p&gt;分享一下燃烧效果的shader实现思路,原理非常简单,掌握这个或许可以举一反三实现很多类似的效果哦&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;效果展示:
+&lt;img src=&quot;burn_shader_display.gif&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;原理&lt;/h2&gt;
+&lt;p&gt;实现这个效果需要一张用于混合的燃烧纹理图片,例如:
+&lt;img src=&quot;burn_texture.jpg&quot; alt=&quot;burn&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;在燃烧过程中,由于温度是不平均的,所以温度最高的地方先燃烧,然后逐渐向边缘燃烧
+基于以上条件,在shader中根据红色程度来透明我们的目标图片,并在过渡边缘逐渐混合燃烧纹理,达到拟真的情况&lt;/p&gt;
+&lt;p&gt;设一个值Percent用于表示当前的燃烧程度,该值的范围从0~1,值越大,燃烧的越多,将这个值与rgb中的r做对比,Percent超出了r的值则将对应的像素透明化,然后还没超的r值根据一定的比例混合燃烧纹理,已达到边缘渐变效果&lt;/p&gt;
+&lt;h2&gt;实现&lt;/h2&gt;
+&lt;p&gt;定义需要的属性&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Properties
+{
+    // 想要作为燃烧目标的纹理
+    _MainTex (&quot;Albedo (RGB)&quot;, 2D) = &quot;white&quot; {}
+    // 用于混合的燃烧纹理
+    _CrossTex (&quot;Cross Texture&quot;, 2D) = &quot;white&quot; {}
+    // 燃烧程度
+    _Percent (&quot;Percent (比例)&quot;, Range(0, 1)) = 0.5
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;关键部分surf函数的实现&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf (Input IN, inout SurfaceOutput o)
+{
+    // 获取目标纹理和燃烧纹理当前坐标的颜色
+    fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
+    fixed4 t = tex2D(_CrossTex, IN.uv_MainTex);
+
+    // 判断当前燃烧程度是否超过红色值
+    if (t.r &amp;lt;= _Percent) {
+        // 超过了则将alpha值设为0
+        c.a = 0;
+    } else if (t.r &amp;lt;= _Percent * 2) {
+        // 如果2倍的当前程度超过了红色值,则将纹理与燃烧纹理混合
+        c.rgb *= t.rgb;
+        // 透明度也做一个微弱的渐变,使得效果好一些
+        c.a *= 1 - _Percent * 0.8;
+    }
+
+    o.Emission = c.rgb;
+    o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;完整代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/noise_burn&quot;
+{
+    Properties
+    {
+        _MainTex (&quot;Albedo (RGB)&quot;, 2D) = &quot;white&quot; {}
+        _CrossTex (&quot;Cross Texture&quot;, 2D) = &quot;white&quot; {}
+        _Percent (&quot;Percent (比例)&quot;, Range(0, 1)) = 0.5
+    }
+    SubShader
+    {
+        Tags { &quot;RenderType&quot;=&quot;Transparent&quot; }
+        LOD 200
+
+        CGPROGRAM
+        // Physically based Standard lighting model, and enable shadows on all light types
+        #pragma surface surf Lambert alpha
+
+        // Use shader model 3.0 target, to get nicer looking lighting
+        #pragma target 3.0
+
+        sampler2D _MainTex;
+        sampler2D _CrossTex;
+        float _Percent;
+
+        struct Input
+        {
+            float2 uv_MainTex;
+        };
+
+        // Add instancing support for this shader. You need to check &apos;Enable Instancing&apos; on materials that use the shader.
+        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
+        // #pragma instancing_options assumeuniformscaling
+        UNITY_INSTANCING_BUFFER_START(Props)
+            // put more per-instance properties here
+        UNITY_INSTANCING_BUFFER_END(Props)
+
+        void surf (Input IN, inout SurfaceOutput o)
+        {
+            fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
+            fixed4 t = tex2D(_CrossTex, IN.uv_MainTex);
+
+            if (t.r &amp;lt;= _Percent) {
+                c.a = 0;
+            } else if (t.r &amp;lt;= _Percent * 2) {
+                c.rgb *= t.rgb;
+                c.a *= 1 - _Percent * 0.8;
+            }
+
+            o.Emission = c.rgb;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    }
+    FallBack &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>C++运行时崩溃问题汇总</title><link>https://xmfrostless.github.io/posts/code/cpp/crashwithcpp/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/crashwithcpp/</guid><description>归结起来,崩溃问题就一种,那就是访问了无效的内存地址</description><pubDate>Fri, 27 Dec 2019 15:12:41 GMT</pubDate><content:encoded>&lt;p&gt;归结起来,崩溃问题就一种,那就是访问了无效的内存地址,体现在具体的代码上无非两种情况,数组越界和失效的指针,下面将细说这两种情况,并且如何避免.&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;数组越界&lt;/h2&gt;
+&lt;h3&gt;c数组&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;T value[10];
+
+value[11]; // crash
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★★&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;描述:&lt;/strong&gt;
+这种数组有比较好的性能,但往往不便于管理.
+&lt;strong&gt;建议:&lt;/strong&gt;
+1.数组长度使用枚举,常量或者宏
+2.封装一个获取数值的方法,例如&lt;code&gt;GetArrValue(int index)&lt;/code&gt;,方法内判断&lt;code&gt;index &amp;gt;= 0 &amp;amp;&amp;amp; index &amp;lt; length&lt;/code&gt;&lt;/p&gt;
+&lt;h3&gt;std::vector&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;std::vector&amp;lt;T&amp;gt; vec;
+
+vec[100]; // crash when (100 &amp;gt;= vec.size())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★☆&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+c数组的替代品,大部分场合下使用,都可以忽略数组长度,但是还是有很多场合下会导致数组越界,因为它仍然可以通过下标去获取元素
+&lt;strong&gt;建议:&lt;/strong&gt;
+在使用时依然要判断下标的范围,比如&lt;code&gt;index &amp;gt;= 0 &amp;amp;&amp;amp; index &amp;lt; vec.size()&lt;/code&gt;,建议根据需要封装方法来获取元素&lt;/p&gt;
+&lt;h2&gt;野指针&lt;/h2&gt;
+&lt;h3&gt;未初始化指针&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;T* p;
+
+p-&amp;gt;func(); // crash
+if (p) {
+	p-&amp;gt;func(); // crash too
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★★&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+未初始化的指针指向未知的地址,而不是&lt;code&gt;nullptr&lt;/code&gt;或者&lt;code&gt;0&lt;/code&gt;,这样会使得你在做指针判空时失效&lt;code&gt;if(p)&lt;/code&gt;
+&lt;strong&gt;建议:&lt;/strong&gt;
+养成初始化的好习惯,由于c++新特性,都不需要在构造函数的初始化列表中去初始化了,只需要&lt;code&gt;int* p{ nullptr }&lt;/code&gt;在声明时这样写一下就ok了,你还懒得写初始化吗?编程是一项严谨的事情.&lt;/p&gt;
+&lt;h3&gt;内存被释放&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;T* p = new T();
+
+delete p;
+// ...
+p-&amp;gt;func(); // crash
+if (p) {
+	p-&amp;gt;func(); // crash too
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★★&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+因为指向的内存已经被释放,导致后面的调用失效,这种情况写的不好会非常难找,而且开发时往往还容易遇到很多
+&lt;strong&gt;建议:&lt;/strong&gt;
+1.delete之后,一定要给指针赋值为空.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;T* p = new T();
+T* other = p;
+delete p;
+p = nullptr;
+
+//...
+if (other) {
+	other-&amp;gt;func(); // crash
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★★&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+多个指针指向同一个内存地址,某个地方被释放了,而其他指针不知道
+&lt;strong&gt;建议:&lt;/strong&gt;
+1.封装的作用在这里就体现了,不要把成员指针给外面到处赋值,否则后果自负
+2.养成良好的成对书写习惯和谁申请谁释放的准则.哪个模块申请的内存,哪个模块负责释放.
+3.如果确实有多个指针的需求,delete之后,请一定记得将他们赋值为nullptr
+4.使用智能指针&lt;/p&gt;
+&lt;h3&gt;迭代器失效&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;std::vector&amp;lt;int&amp;gt; vec;
+vec.resize(10);
+auto ite = vec.begin();
+while (ite != vec.end()) {
+	if (condition) {
+		vec.push_back(99);
+		std::cout &amp;lt;&amp;lt; *ite; // crash		
+	}
+	++ite;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★★☆&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+迭代器失效本质上也是指向的内存区域发生变化,故而成为野指针,导致崩溃的问题
+&lt;strong&gt;建议:&lt;/strong&gt;
+不要在遍历的时候去做插入和删除的事情&lt;/p&gt;
+&lt;h3&gt;空指针&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;T* p = nullptr;
+p-&amp;gt;func(); // crash
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;危险度:★☆☆&lt;/strong&gt;
+&lt;strong&gt;描述:&lt;/strong&gt;
+没有指向任何地址,鉴于出错时往往比较好定位,所以危险度不算太高,但出错情况还是很多的
+&lt;strong&gt;建议:&lt;/strong&gt;
+做好必要的指针判空,很多时候比如加载资源,使用第三方方法获取对象,查找对象等等的操作时,都需要对指针判空.&lt;/p&gt;
+&lt;h2&gt;最后:&lt;/h2&gt;
+&lt;p&gt;避免写出可能崩溃的代码,需要保持良好的代码书写和书写约束,保持高内聚低耦合,保持良好的封装,保持有效的安全判断&lt;/p&gt;
+</content:encoded></item><item><title>python写个方便制作RuleTile的工具</title><link>https://xmfrostless.github.io/posts/code/python/ruletiletool/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/python/ruletiletool/</guid><pubDate>Tue, 24 Dec 2019 15:32:40 GMT</pubDate><content:encoded>&lt;p&gt;TiledMap中的RuleTile是非常好用的2d刷地形工具,当你设置好各种相邻条件的图块后,刷地形时它会根据相邻的情况使用对应的图块,这样会更加方便.&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;terrain_temp.jpg&quot; alt=&quot;TerrainDisplay&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;RuleTile&lt;/h2&gt;
+&lt;p&gt;我自己因为需要制作地图,采用了这个方式,但是绘制时遇到了一个问题,那就是条件实在太多了,有47种情况,这要画起来那得多让人崩溃.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;ruletile_inspector.jpg&quot; alt=&quot;RuleTile&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;condition47.jpg&quot; alt=&quot;condition47&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;不过可以发现,很多图块都有很多部位是重复的,将这些重复区域提取出来,会发现是由这样一个基础图块组成的&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;metatile.jpg&quot; alt=&quot;Metatile&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;这是粒度更小的基础图块,每4个可以组合成一个大图块,只要绘制这样一个基础图块,我们就可以生成那47个大图块&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;merge.png&quot; alt=&quot;Merge&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;使用Python编写&lt;/h2&gt;
+&lt;p&gt;有了这样一个元图块集和映射关系,就不需要手动去拼接,这时候使用python去编写一个拼接工具&lt;/p&gt;
+&lt;h4&gt;Image类&lt;/h4&gt;
+&lt;h5&gt;&lt;code&gt;paste(from_box, cur_box)&lt;/code&gt;粘贴方法&lt;/h5&gt;
+&lt;p&gt;接受两个参数
+&lt;code&gt;from_box&lt;/code&gt;表示从基础图片中置顶区域的切图
+&lt;code&gt;cur_box&lt;/code&gt;表示粘贴到自身图片的目标区域&lt;/p&gt;
+&lt;h5&gt;&lt;code&gt;crop(box)&lt;/code&gt;切图方法&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;box&lt;/code&gt;表示切图区域&lt;/p&gt;
+&lt;p&gt;这样就可以通过:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;srcImage = Image.open(...) # 打开基础图片
+newImage = Image.new(...) # 新建输出的图片
+src_box = (0, 0, 16, 16) # 基础图块的位置
+dest_box = (...) # 欲粘贴的位置
+# 实现从一张图上切出区域粘贴到另一张图上的指定区域
+newImage.paste(srcImage.crop(src_box), dest_box)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;hr /&gt;
+&lt;p&gt;完整代码&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from PIL import Image
+import os
+import sys
+
+# 获取当前目录
+cur_dir = os.path.dirname(__file__)
+# 元数据文件目录
+src_dir = cur_dir + &quot;/../&quot;
+# 导出目录
+export_dir = cur_dir + &quot;/export/&quot;
+# 图块像素大小
+pixel_size = 16
+# 图块缩放比例
+size_scale = 4
+# 元数据列数
+src_row = 5
+# 元数据行数
+src_column = 3
+# 导出图片列数
+dest_row = 6
+# 导出图片行数
+dest_column = 32
+# 导出图片映射表
+dest_maps = [
+	-1, 0, 1, 1, 2, -1,
+	-1, 10, 11, 11, 12, -1,
+	-1, -1, 5, 7, 10, 12,
+	0, 2, 5, 7, -1, -1,
+	0, 1, 1, 2, 5, 6,
+	5, 6, 6, 7, 10, 11,
+	6, 7, 0, 1, 1, 2,
+	11, 12, 5, 3, 4, 7,
+	5, 8, 9, 7, 6, 6,
+	10, 11, 11, 12, 11, 11,
+	6, 7, 1, 1, 5, 6,
+	6, 7, 6, 6, 5, 6,
+	1, 1, 1, 1, 5, 8,
+	6, 3, 4, 6, 5, 6,
+	9, 7, 6, 8, 9, 6,
+	6, 7, 11, 11, 11, 11,
+	5, 6, 6, 7, 1, 1,
+	5, 3, 4, 7, 4, 3,
+	5, 8, 9, 7, 9, 8,
+	5, 3, 4, 7, 11, 11,
+	6, 6, 6, 6, 6, 8,
+	6, 3, 4, 6, 6, 6,
+	9, 6, 9, 8, 6, 6,
+	6, 6, 6, 6, 4, 3,
+	9, 6, 6, 8, 9, 6,
+	4, 6, 6, 3, 6, 3,
+	6, 8, 9, 8, 9, 8,
+	4, 6, 4, 6, 6, 3,
+	6, 8, 9, 6, 9, 8,
+	4, 3, 4, 3, 4, 3,
+	6, 6, 0, 2, -1, -1,
+	6, 6, 10, 12, -1, -1
+]
+
+# 计算出size的大小
+grid_size = pixel_size * size_scale
+
+# 用于获取扩展名的方法
+def extname(filename):
+	ret = os.path.splitext(filename)
+	if len(ret) &amp;gt;= 2:
+		return ret[1]
+	return &quot;&quot;
+
+# 查找当前目录
+def find_str_from_list(li, str):
+	for i in range(len(li)):
+		if li[i] == &quot;%s&quot; % (str):
+			return i
+	return -1
+
+# 获取指定目录,指定扩展名的所有文件
+def get_all_files(path, filters: list):
+	files: list = []
+	temp_list = os.listdir(path)
+	for check in temp_list:
+		check_path = os.path.join(path, check)
+		if os.path.isdir(check_path):
+			deep_files = get_all_files(check_path, filters)
+			for deep_file in deep_files:
+				files.append(deep_file)
+		else:
+			ext = extname(check_path)
+			find_index = find_str_from_list(filters, ext)
+			if find_index &amp;gt;= 0:
+				files.append(check_path)
+	return files
+
+# 删除目录
+def remove_dir(path):
+	temp_list = os.listdir(path)
+	for check in temp_list:
+		check_path = os.path.join(path, check)
+		if os.path.isdir(check_path):
+			remove_dir(check_path)
+			os.rmdir(check_path)
+		else:
+			os.remove(check_path)
+
+# 创建目录
+def mk_dir(path):
+	if os.path.isfile(path):
+		return
+	if not os.path.exists(path):
+		mk_dir(os.path.dirname(path))
+		os.mkdir(path)
+
+# 从基础图集生成最终的图块图集
+def convert_to_altas(filename):
+	if not os.path.exists(filename):
+		return &quot;&quot;
+	src_img = Image.open(filename)
+	dest_img = Image.new(
+		&quot;RGBA&quot;, (dest_row * grid_size, dest_column * grid_size))
+	for i in range(len(dest_maps)):
+		sign = dest_maps[i]
+		if sign == -1:
+			continue
+		src_y = int(sign / src_row)
+		src_x = int(sign % src_row)
+		src_box = (src_x * grid_size, src_y * grid_size,
+				   (src_x + 1) * grid_size, (src_y + 1) * grid_size)
+
+		dest_y = int(i / dest_row)
+		dest_x = int(i % dest_row)
+		dest_box = (dest_x * grid_size, dest_y * grid_size,
+					(dest_x + 1) * grid_size, (dest_y + 1) * grid_size)
+		dest_img.paste(src_img.crop(src_box), dest_box)
+
+	dest_filename = export_dir + filename.replace(src_dir, &quot;&quot;)
+	mk_dir(os.path.dirname(dest_filename))
+	dest_img.save(dest_filename)
+	return dest_filename
+
+remove_dir(cur_dir + &quot;/export&quot;)
+
+# 将src_dir目录下的所有png后缀的基础图集转换成图块图集并放到export目录下
+files = get_all_files(src_dir, [&quot;.png&quot;])
+for filename in files:
+	tempdir = os.path.dirname(filename)
+	dest = convert_to_altas(filename)
+	print(&quot;&amp;gt; &quot; + dest)
+
+print(&quot;finished.&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>使用GameScript与命令模式在Unity中构建剧情模块</title><link>https://xmfrostless.github.io/posts/code/unity/buildstorywithgamescript/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/buildstorywithgamescript/</guid><description>使用脚本来构建剧情模块,不需要过多的涉及代码改动,支持热更新</description><pubDate>Wed, 09 Oct 2019 09:43:48 GMT</pubDate><content:encoded>&lt;p&gt;剧情的文本和展示条件往往需要频繁的修改,不管是交给剧情策划,还是自己独立开发写剧情,都会希望剧情能够方便的修改,不需要过多的涉及代码改动,所以结合脚本来构建剧情模块,是最快捷的方案.&lt;/p&gt;
+&lt;p&gt;本文:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;剧情管理器&lt;/li&gt;
+&lt;li&gt;命令模式实现UI展示的调用&lt;/li&gt;
+&lt;li&gt;GameScript接入&lt;/li&gt;
+&lt;li&gt;脚本函数与命令绑定&lt;/li&gt;
+&lt;li&gt;剧情触发器&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;剧情管理器&lt;/h2&gt;
+&lt;p&gt;剧情管理器的作用是对剧情的调用方式做一个抽象,一方面提供更方便的接口给调用端使用,比如触发剧情第一章第一节,触发NPC某某某的对话等等,另一方面是对接脚本函数&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;接口设计&lt;/strong&gt;&lt;br /&gt;
+先设计接口,具体实现暂时不管,保持模块的一个大概思路,后面的实现就是一步步完成就好了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public class StoryManager : Singleton&amp;lt;StoryManager&amp;gt; {
+	// 执行主线故事(参数为:章,节))
+	public void ExecuteMainStory(int chapter, int part);
+	// 执行支线故事
+	public void ExecuteSubSotry(int chapter, int part);
+	// 执行NPC对话
+	public void ExecuteNpcTalk(int npcID);
+	// 根据游戏的需要,还可以扩展更多的方法
+	// more ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;调用:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 执行第一章第一节的剧情
+StoryManager.GetInstance().ExecuteMainStory(1, 1);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;实现这几个方法,就需要结合脚本.&lt;/p&gt;
+&lt;h2&gt;命令模式实现UI展示的调用&lt;/h2&gt;
+&lt;p&gt;具体的展示如何做,每个游戏都不一样,这一块不是本文的重点,这里做了一个简单的显示方式,如下图:
+&lt;img src=&quot;talk_box.png&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;命令模式结合消息控制UI的展示&lt;/strong&gt;
+一个命令基类:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public abstract class GameCommandBase {
+	// 用于标记命令是否结束
+	protected bool _bFinish = true;
+	// 执行命令的方法,子类去实现
+	public abstract void Execute();
+
+	public virtual void OnEnter() {}
+	public virtual void OnExit() {}
+
+	public bool IsFinish() {
+		return _bFinish;
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;public class StoryCommand : GameCommandBase {
+
+	// 对话的文本
+	public string content = &quot;&quot;;
+
+	public override void OnEnter() {
+		_bFinish = false;
+
+		// 这里监听剧情对话的结束消息
+		MessageCenter.AddListener(this, (OnStoryTalkClose msg) =&amp;gt; {
+			_bFinish = true;
+		});
+	}
+
+	public override void OnExit() {
+		MessageCenter.RemoveListener&amp;lt;OnStoryTalkClose&amp;gt;(this);
+	}
+
+	public override void Execute() {
+		// 发送一个剧情对话的播放消息,会在负责显示对话UI的类中监听这个消息
+		var msg = new OnCommandStoryTalk();
+		msg.content = content;
+		MessageCenter.Send(msg);
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;对于其他播放音效等命令就不再贴代码了,实现思路与这个一样.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;命令管理器&lt;/strong&gt;&lt;br /&gt;
+命令管理器是负责批处理命令的中枢系统&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public static class CommandSystem {
+	// 一个用于存放一组命令的队列,后面会从队列中按顺序取出并执行
+	public static Queue&amp;lt;GameCommandBase&amp;gt; _cmdQueue = new Queue&amp;lt;GameCommandBase&amp;gt;();
+	// 当前的命令
+	public static GameCommandBase _currentCmd = null;
+
+	// 入队一个命令
+	public static void PushCMD(GameCommandBase cmd) {
+		_cmdQueue.Enqueue(cmd);
+	}
+
+	// 执行
+	public static void Execute() {
+		// 当前命令存在的话不能重复执行
+		if (_currentCmd != null) { return; }
+		// 队列中不存在命令也无法执行
+		if (_cmdQueue.Count == 0) { return; }
+		// 取出命令,执行命令
+		_currentCmd = _cmdQueue.Dequeue();
+		_currentCmd.OnEnter();
+		_currentCmd.Execute();
+	}
+
+	// Uppublished函数,用于检测命令的结束,并自动进入下一个命令
+	// Uppublished方法需要放在一个场景的Uppublished中去执行
+	public static void Uppublished() {
+		// 当前命令不存在则不继续
+		if (_currentCmd == null) { return; }
+		// 当前命令未完成则不继续
+		if (!_currentCmd.IsFinish()) { return; }
+		// 执行当前命令退出
+		_currentCmd.OnExit();
+		_currentCmd = null;
+		// 继续执行下一个命令
+		Execute();
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;以上就打通了UI展示部分的调用,只要在任意地方调用如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 创建一个命令
+var cmd = new StoryCommand();
+// 显示的文本
+cmd.content = &quot;这里很危险,快回去!&quot;;
+// 入队
+CommandSystem.PushCMD(cmd);
+// 如果有多个命令
+// more push ...
+// 执行
+CommandSystem.Execute();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;GameScript接入&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Github:
+&lt;a href=&quot;https://github.com/xmfrostless/GameScript&quot;&gt;https://github.com/xmfrostless/GameScript&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;GameScript是我自己写的一个基于字符串解析的脚本语言,优点就是接入方便,直接将DLL拖入Unity,无需配置,就可以直接使用.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;(这里使用其他脚本语言,思路都是一样的)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;设计剧情脚本的管理方式&lt;/strong&gt;&lt;br /&gt;
+我的设计思路是一个片段为一个脚本文件,这样也是方便后期的查找和修改
+例如主线第一章第一节的剧情文件为:&lt;code&gt;main_1_1.gs.txt&lt;/code&gt;
+支线则为:&lt;code&gt;sub_1_1.gs.txt&lt;/code&gt;这种形式
+id为10001的npc的对话为:&lt;code&gt;npc_10001.gs.txt&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;设计脚本函数&lt;/strong&gt;&lt;br /&gt;
+播放对话:
+&lt;code&gt;StoryTalk(content)&lt;/code&gt;
+播放音频:
+&lt;code&gt;Audio(kindID, audioName, volume)&lt;/code&gt;
+播放BGM:
+&lt;code&gt;Music(musicName, volume)&lt;/code&gt;
+等待second秒:
+&lt;code&gt;Wait(second)&lt;/code&gt;
+执行操作:
+&lt;code&gt;Execute()&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;具体内容编写&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// main_1_1.gs.txt
+entry() {
+	// 播放一个bgm
+	Music(&quot;sotry_bgm&quot;, 0.8);
+	// 播放一个对话音效
+	Audio(1, &quot;voice_1&quot;, 1);
+	// 播放对话
+	StoryTalk(&quot;这里很危险,快回去!&quot;);
+	// 执行
+	Execute();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;脚本函数与命令绑定&lt;/h2&gt;
+&lt;p&gt;在StoryManager中增加一个初始化方法,并注册脚本函数:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// gs为GameScript的命名空间
+using gs;
+
+public class StoryManager : Singleton&amp;lt;StoryManager&amp;gt; {
+	// 定义一个公共函数(GameScript的思路是函数看成一个空间,函数内可以包含函数)
+	private VMFunction _storyDefine = null;
+
+	public void Init() {
+		// 加载公共空间的脚本,可以写一些公共的内容
+		// 这里的 GSSystem.LoadScript 本质上如下,后面的内容将不再解释
+		// GSSystem.LoadScript 会做一些安全判断
+		/*
+		var textAsset = Resources.Load&amp;lt;TextAsset&amp;gt;(&quot;story/define.gs&quot;);
+		_storyDefine = VM.Load(textAsset.text);
+		*/
+		_storyDefine = GSSystem.LoadScript(&quot;story/define.gs&quot;);
+		// 执行一遍,创建公共对象
+		_storyDefine.Execute();
+		
+		// 注册 StoryTalk 函数
+		_storyDefine.RegisterFunction(&quot;StoryTalk&quot;, (List&amp;lt;VMValue&amp;gt; args) =&amp;gt; {
+			// 参数验证
+			if (args.Count &amp;lt; 1) { return; }
+			// 创建命令
+			var cmd = new GameCommand.StoryCommand();
+			cmd.content = args[0].ToString();
+			CommandSystem.PushCMD(cmd);
+		});
+		// 注册 Execute 函数
+		_storyDefine.RegisterFunction(&quot;Execute&quot;, (List&amp;lt;VMValue&amp;gt; args) =&amp;gt; {
+			CommandSystem.Execute();
+		});
+
+		// 注册其他函数,就不再详细写,思路一样
+		// more ...
+	}
+
+	// other ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;实现调用剧情的方法&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public void ExecuteMainStory(int chapter, int part) {
+	_ExecuteStory(0, chapter, part);
+}
+public void ExecuteSubStory(int chapter, int part) {
+	_ExecuteStory(1, chapter, part);
+}
+
+/**
+	type: 0表示主线,1表示支线
+*/
+private void _ExecuteStory(int type, int chapter, int part) {
+	string storySign = &quot;&quot;;
+	if (type == 0) {
+		storySign = &quot;main&quot;;
+	} else if (type == 1) {
+		storySign = &quot;sub&quot;;
+	} else {
+		return;
+	}
+
+	// 加载脚本文件,并且将_storyDefine作为父空间,这样就可以调用父空间注册的函数了
+	var func = GSSystem.LoadScript(string.Format(&quot;story/{0}_{1}_{2}.gs&quot;, storySign, chapter, part), _storyDefine);
+	if (func == null) { return; }
+	// 执行文件
+	func.Execute();
+	// 获取其中的entry方法
+	var entryFunc = func.GetFunction(&quot;entry&quot;);
+	if (entryFunc != null) {
+		// 执行entry()
+		entryFunc.Execute();
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;剧情触发器&lt;/h2&gt;
+&lt;p&gt;触发器就是在游戏中发生某些条件的时候,我们接收到这个条件做什么事情,这里将触发条件回调到脚本中,就可以在脚本中处理具体的条件,并播放剧情了&lt;/p&gt;
+&lt;p&gt;这个仍然可以在剧情管理器中实现:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;using gs;
+public class StoryManager : Singleton&amp;lt;StoryManager&amp;gt; {
+	private VMFunction _storyTrigger = null;
+
+	public void Init() {
+		// 需要创建story/trigger.gs这个文件
+		_storyTrigger = GSSystem.LoadScript(&quot;story/trigger.gs&quot;, _storyDefine);
+		_storyTrigger.Execute();
+
+		// 注册一个主线剧情回调的方法
+		_storyDefine.RegisterFunction(&quot;MainStory&quot;, (List&amp;lt;VMValue&amp;gt; args) =&amp;gt; {
+			if (args.Count &amp;lt; 2) { return; }
+			if (args[0].IsNumber() &amp;amp;&amp;amp; args[1].IsNumber()) {
+				ExecuteMainStory(args[0].GetInt(), args[1].GetInt());
+			}
+		});
+
+		// other ...
+	}
+	// other ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后例如收到某个事件,比如角色升级:
+在StoryManager中添加触发器&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;public void OnLevelUp(int cur, int to) {
+	// 回调触发器脚本的OnLevelUp方法
+	var func = _storyTrigger.GetFunction(&quot;OnLevelUp&quot;);
+	if (func) {
+		List&amp;lt;VMValue&amp;gt; args = new List&amp;lt;VMValue&amp;gt;();
+		args.Add(new VMValue(cur));
+		args.Add(new VMValue(to));
+		func.Execute(args);
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;触发器脚本:
+&lt;code&gt;trigger.gs.txt&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;OnLevelUp(cur, to) {
+	// 判断到达5级,触发主线第一章第一节
+	if (to == 5) {
+		// 调用主线剧情
+		MainStory(1, 1);
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;到这里,整个就完成了,剩下的就是慢慢完善和填充内容,本文提供的是一个思路,希望能够帮助到需要的人.&lt;/p&gt;
+</content:encoded></item><item><title>资源与逻辑分离,枚举法管理音频资源的播放</title><link>https://xmfrostless.github.io/posts/code/experience/separation/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/experience/separation/</guid><pubDate>Mon, 30 Sep 2019 11:24:36 GMT</pubDate><content:encoded>&lt;p&gt;执着于写一个思路清晰,便于维护和后期修改的代码是一个程序员的追求和技术素养. 这一篇讲一讲音频调用方式的书写技巧&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;例子&lt;/h2&gt;
+&lt;p&gt;播放一个背景音乐和按需播放音效是再普遍不过的功能需求了,最简单的方式就是直接播放音频资源,一般引擎都有提供播放音乐的功能&lt;/p&gt;
+&lt;p&gt;例如播放一个背景音乐:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;AudioEngine::GetInstance()-&amp;gt;PlayBGM(&quot;xxx/xxx/xxx/xxxxx.mp3&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;例如播放一个音效:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;AudioEngine::GetInstance()-&amp;gt;PlaySound(&quot;xxx/xxx/xxx/xxxxx.mp3&quot;);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这种直接调用的方式,可以实现功能,但是对于后期修改音频文件名,或者替换音效的情况时,就需要在整个代码中去寻找并修改,是非常低效的&lt;/p&gt;
+&lt;h2&gt;技巧&lt;/h2&gt;
+&lt;p&gt;对于处理这种情况,有很多解决方法,这里提供一个方法&lt;/p&gt;
+&lt;p&gt;对于音效和背景音乐,提供一个枚举,例如&lt;code&gt;开火声&lt;/code&gt;,&lt;code&gt;跳跃&lt;/code&gt;,&lt;code&gt;获得道具&lt;/code&gt;等等具体的音效,放到这个枚举中&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;enum class eAudioBGM {
+	None = 0,
+	TitleScene, // 标题场景的bgm
+};
+enum class eAudioSound {
+	None = 0,
+	Fire, // 开火
+	Jump, // 跳跃
+	ItemGet, // 获得道具
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;有了以上的枚举,一切就方便起来了,到这里,大家肯定都明白了&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;音乐播放器类&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class AudioPlayer {
+public:
+	void InitAudio();
+	void PlayBGM(eAudioBGM bgm);
+	int PlaySound(eAudioSound sound);
+	// 更多的功能
+	// ...
+private:
+	// 用于存放背景音乐路径的map
+	std::map&amp;lt;eAudioBGM, std::string&amp;gt; _audioBgmMap;
+	// 用于存放音效路径的map
+	std::map&amp;lt;eAudioSound, std::string&amp;gt; _audioSoundMap;
+	// 游戏引擎提供的底层音频类
+	GameEngine::AudioEngine* _audioEngine { nullptr };
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;实现&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void AudioPlayer::InitAudio() {
+	// 这里就可以通过一个json/xml的配置文件来载入,并且标记更多的配置
+	// 这里仅使用代码中配好的方式
+	_audioBgmMap[eAudioBGM::TitleScene] = &quot;music/title_scene.mp3&quot;;
+
+	_audioSoundMap[eAudioSound::Fire] = &quot;sound/fire.mp3&quot;;
+	_audioSoundMap[eAudioSound::Jump] = &quot;sound/jump.mp3&quot;;
+	_audioSoundMap[eAudioSound::ItemGet] = &quot;sound/item_get.mp3&quot;;
+
+	// 获取单例,是为了后面方便调用,减少GetInstance()调用,这也是一个细节
+	_audioEngine = GameEngine::AudioEngine::GetInstance();
+
+	// 这里可以根据需要预加载
+	// 例如音效我需要预加载
+	for (const auto&amp;amp; pair : _audioSoundMap) {
+		_audioEngine-&amp;gt;Preload(pair.second);
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;以上初始化,在游戏加载时调用一次就好了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void AudioPlayer::PlayBGM(eAudioBGM bgm) {
+	auto ite = _audioBgmMap.find(bgm);
+	if (ite != _audioBgmMap.end()) {
+		_audioEngine-&amp;gt;PlayBGM(ite-&amp;gt;second)
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;int AudioPlayer::PlaySound(eAudioSound sound) {
+	auto ite = _audioSoundMap.find(sound);
+	if (ite != _audioSoundMap.end()) {
+		return _audioEngine-&amp;gt;PlaySound(ite-&amp;gt;second)
+	}
+	return -1;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;调用&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// bgm
+AudioPlayer::GetInstance()-&amp;gt;PlayBGM(eAudioBGM::TitleScene);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// sound
+AudioPlayer::GetInstance()-&amp;gt;PlaySound(eAudioSound::Fire);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;以上,就完整的将音频模块包装了一下,如果再要添加或者修改一个音频,都只需要在InitAudio中修改就好了,即使是删除一个音效,删除枚举,调用的地方IDE也会提示&lt;/p&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(五) - 描边效果</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote5/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote5/</guid><pubDate>Sun, 08 Sep 2019 01:38:06 GMT</pubDate><content:encoded>&lt;p&gt;周末在家玩游戏,然后看到怪物霸体的描边效果,描边在游戏中是很常用的,所以想自己实现一个,思考了一下,想到一个非常简单的方法&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;效果展示:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;shader_img2.jpg&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;原理&lt;/h2&gt;
+&lt;p&gt;描边也有很多实现方法吧,我的办法是,检测一个透明像素的周围是否有非透明像素,如果有,则将当前透明像素填充为描边颜色&lt;/p&gt;
+&lt;h2&gt;实现&lt;/h2&gt;
+&lt;p&gt;还是封装一个方法比较简洁&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/**
+参数:
+  tex:纹理
+  uv:纹理取值坐标
+  color:描边颜色
+  width:描边宽度
+  precision:精确度(透明度检测基准,小于该值则判定为可描边的区域)
+返回值:
+  最终颜色
+*/
+fixed4 GetOutlineColor(sampler2D tex, float2 uv, fixed4 color, fixed width, fixed precision) {
+  // 首先获取原本的颜色,并判定是否是有效颜色
+  // 有效颜色则表示非描边区域,直接返回该位置的颜色
+  fixed4 origin = tex2D(tex, uv);
+  if (origin.a &amp;gt; precision) {
+    return origin;
+  }
+  // 描边区域检测
+  // 中心点周围3x3的九宫格区域
+  for (fixed i = 0; i &amp;lt; 3; ++i) {
+    for (fixed j = 0; j &amp;lt; 3; ++j) {
+      // 获取当前位置的实际纹理坐标
+      // width位置的纹理
+      float2 tempUV = uv + float2(i - 1, j - 1) * width;
+      // 获取颜色,并判断颜色是否有效
+      fixed4 c = tex2D(tex, tempUV);
+      // 如果颜色有效,说明uv这个位置需要描边,返回描边的颜色color
+      if (c.a &amp;gt; precision) {
+        return color;
+      }
+    }
+  }
+  // 周围未找到有效颜色,返回原始颜色
+  return origin;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;将描边的颜色,宽度,精准度提取出来,供外部设置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+  _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+  _Color (&quot;Color (颜色)&quot;, Color) = (1, 1, 1, 1)
+  _Width (&quot;Width (宽度)&quot;, Range(0, 1)) = 0.5
+  _Precision (&quot;Precision (精确度)&quot;, Range(0, 0.99)) = 0.5
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;shader_img1.jpg&quot; alt=&quot;propteties&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;surf函数中&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutputStandard o) {
+  // 调用即可
+  half4 c = GetOutlineColor(_MainTex, IN.uv_MainTex, _Color, _Width * 0.01, _Precision);
+  o.Emission = c.rgb;
+  o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;完整代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/OutlineShader&quot; {
+  Properties {
+    _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+    _Color (&quot;Color (颜色)&quot;, Color) = (1, 1, 1, 1)
+    _Width (&quot;Width (宽度)&quot;, Range(0, 1)) = 0.5
+    _Precision (&quot;Precision (精确度)&quot;, Range(0, 0.99)) = 0.5
+  }
+  SubShader {
+    CGPROGRAM
+
+    #pragma surface surf Lambert alpha
+    #pragma target 3.0
+
+    sampler2D _MainTex;
+    fixed4 _Color;
+    fixed _Width;
+    fixed _Precision;
+
+    struct Input {
+      float2 uv_MainTex;
+    };
+
+    fixed4 GetOutlineColor(sampler2D tex, float2 uv, fixed4 color, fixed width, fixed precision) {
+
+      fixed4 origin = tex2D(tex, uv);
+      if (origin.a &amp;gt; precision) {
+        return origin;
+      }
+
+      for (fixed i = 0; i &amp;lt; 3; ++i) {
+        for (fixed j = 0; j &amp;lt; 3; ++j) {
+          float2 tempUV = uv + float2(i - 1, j - 1) * width;
+          fixed4 c = tex2D(tex, tempUV);
+          if (c.a &amp;gt; precision) {
+            return color;
+          }
+        }
+      }
+
+      return origin;
+    }
+
+    void surf(Input IN, inout SurfaceOutput o) {
+      half4 c = GetOutlineColor(_MainTex, IN.uv_MainTex, _Color, _Width * 0.01, _Precision);
+      o.Emission = c.rgb;
+      o.Alpha = c.a;
+    }
+
+    ENDCG
+  }
+  Fallback &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(四) - 毛玻璃效果</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote4/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote4/</guid><pubDate>Fri, 06 Sep 2019 15:50:37 GMT</pubDate><content:encoded>&lt;p&gt;毛玻璃效果很漂亮,所以来实现一下吧!!&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;效果展示:
+&lt;img src=&quot;shader_img2.jpg&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;原理&lt;/h2&gt;
+&lt;p&gt;毛玻璃效是一种模糊效果,实现思路应该有很多吧,这里采用最简单的一种方式,以像素为圆心,取周围半径范围内颜色的平均值,即可得到&lt;/p&gt;
+&lt;h2&gt;实现&lt;/h2&gt;
+&lt;p&gt;首先封装一个方法来实现模糊效果&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/**
+参数:
+  tex:纹理
+  uv:纹理取值坐标
+  value:范围值(半径范围)
+  step:取值步数(光滑度)
+  percent:模糊占比(强度)
+返回值:
+  最终颜色
+*/
+half4 GetBlurColor(sampler2D tex, float2 uv, half value, half step, half percent) {
+  // 首先限定每个值得范围,使其具有意义,并不会出错
+  value = clamp(value, 0.001, 1);
+  step = floor(clamp(step, 2, 100));
+  percent = clamp(percent, 0, 1);
+
+  // 最终返回值,最终取平均值
+  half4 ret = 0;
+  // 求出每一步的具体长度
+  half delta = value * 2 / step;
+  // 用于统计有效迭代次数
+  half count = 0;
+  // 用于判断是否在圆内的一个比较值,提前算好,也是为了减少计算量
+  half compareValue = value * value;
+
+  // 遍历纹理在value范围下的坐标[-value ~ value]
+  for (half i = -value; i &amp;lt; value; i += delta) {
+    for (half j = -value; j &amp;lt; value; j += delta) {
+      // 如果在圆外则不参与取值
+      if (i * i + j * j &amp;gt; compareValue) { continue; }
+      // 得到当前位置的坐标
+      float2 tempUV = uv + float2(i, j);
+      // 取当前位置的颜色
+      fixed4 c = tex2D(tex, tempUV);
+      // 求和
+      ret += c;
+      count += 1;
+    }
+  }
+  // 取出平均值 * 占比 + 原本颜色 * (1 - 占比)
+  return ret / count * percent + tex2D(tex, uv) * (1 - percent);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;属性中声明一些外部可以控制的变量,用于调节实际效果&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+  _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+  _Radius (&quot;Radius (范围)&quot;, Range(0, 1)) = 0.2
+  _Smooth (&quot;Smooth (平滑度)&quot;, Range(0, 1)) = 0.5
+  _Power (&quot;Power (强度)&quot;, Range(0, 1)) = 1
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;shader_img1.jpg&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;surf函数中&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutputStandard o) {
+  // 将Properties中的属性转换为GetBlurColor需要的参数
+  // 这里做转换而不是直接在Properties中设置对应的值,是为了属性的可读性
+  half4 c = GetBlurColor(_MainTex, IN.uv_MainTex, _Radius, _Smooth * 100, 0.9 + _Power * 0.1);
+  o.Emission = c.rgb;
+  o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;完整代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/Blur&quot; {
+  Properties {
+    _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+    _Radius (&quot;Radius (范围)&quot;, Range(0, 1)) = 0.2
+    _Smooth (&quot;Smooth (平滑度)&quot;, Range(0, 1)) = 0.5
+    _Power (&quot;Power (强度)&quot;, Range(0, 1)) = 1
+  }
+  SubShader {
+    CGPROGRAM
+
+    #pragma surface surf Standard fullforwardshadows alpha
+    #pragma target 3.0
+
+    struct Input {
+      float2 uv_MainTex;
+    };
+
+    sampler2D _MainTex;
+    half _Radius;
+    half _Smooth;
+    half _Power;
+
+    half4 GetBlurColor(sampler2D tex, float2 uv, half value, half step, half percent) {
+      value = clamp(value, 0.001, 1);
+      step = floor(clamp(step, 2, 100));
+      percent = clamp(percent, 0, 1);
+
+      half4 ret = 0;
+      half delta = value * 2 / step;
+      half count = 0;
+      half compareValue = value * value;
+
+      for (half i = -value; i &amp;lt; value; i += delta) {
+        for (half j = -value; j &amp;lt; value; j += delta) {
+          if (i * i + j * j &amp;gt; compareValue) { continue; }
+          float2 tempUV = uv + float2(i, j);
+          fixed4 c = tex2D(tex, tempUV);
+          ret += c;
+          count += 1;
+        }
+      }
+      return ret / count * percent + tex2D(tex, uv) * (1 - percent);
+    }
+
+    void surf(Input IN, inout SurfaceOutputStandard o) {
+      half4 c = GetBlurColor(_MainTex, IN.uv_MainTex, _Radius, _Smooth * 100, 0.9 + _Power * 0.1);
+      o.Emission = c.rgb;
+      o.Alpha = c.a;
+    }
+
+    ENDCG
+  }
+  Fallback &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(三) - 纹理混合</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote3/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote3/</guid><pubDate>Sat, 17 Aug 2019 18:00:51 GMT</pubDate><content:encoded>&lt;p&gt;这篇要讲的是纹理贴图以及纹理混合,掌握纹理混合就可以做很多2D游戏的特效啦,激动啊!&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;纹理贴图&lt;/li&gt;
+&lt;li&gt;颜色效果&lt;/li&gt;
+&lt;li&gt;纹理混合&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;效果展示:
+(原图, 置灰, 反转, 增加亮部减暗暗部)
+(各种纹理混合)
+&lt;img src=&quot;shader_img.jpg&quot; alt=&quot;display&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;纹理贴图&lt;/h2&gt;
+&lt;p&gt;翻到上一篇,Properties属性中有一个&lt;code&gt;2D&lt;/code&gt;类型,它表示一张纹理的信息,所以我们需要在属性中定义它,用于获取外部纹理&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;代码直接在第一篇中写的小练习上直接改&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+    _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后想在CGPROGRAM中使用它,需要再声明一次&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;CGPROGRAM
+sampler2D _MainTex;
+ENDCG
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;定义Input结构体&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;struct Input {
+    // 纹理坐标
+    float2 uv_MainTex;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;然后在surf函数中调用纹理,并输出颜色,这里引入一个方法&lt;code&gt;tex2D&lt;/code&gt;&lt;/h5&gt;
+&lt;p&gt;参数接收纹理和采样坐标,返回纹理在采样坐标位置的颜色值
+&lt;code&gt;fixed4 tex2D(sampler2D texture, float2 pos);&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutput o) {
+    fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
+    // 忽略光照影响,直接赋值给自发光
+    o.Emission = c.rgb;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这样就完成贴图了,在Unity中查看吧,需要将纹理拖放到材质上,就可以看到图片显示了&lt;/p&gt;
+&lt;p&gt;完整代码:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/ShaderDemo1&quot; {
+    Properties {
+        _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+    }
+    SubShader {
+        CGPROGRAM
+
+        #pragma surface surf Lambert
+
+        sampler2D _MainTex;
+
+        struct Input {
+            float2 uv_MainTex;
+        };
+
+        void surf(Input IN, inout SurfaceOutput o) {
+            fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
+            o.Emission = c.rgb;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    }
+    FallBack &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;颜色混合&lt;/h2&gt;
+&lt;p&gt;只需要对上面tex2D输出的颜色做一点小小的修改,就可以实现各种效果,这里列举两个,置灰和反转色,其他的可以自己修改各种值来试试&lt;/p&gt;
+&lt;h4&gt;置灰&lt;/h4&gt;
+&lt;p&gt;置灰有很多种计算方式,本质上一张灰度图其实就是没有色彩,只有明暗,所以RGB三个值都是相同的,我这里采用RGB取最小值的方式实现,这也是比较简单的方法,不用去对颜色做RGB转HSL的来回转换了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutput o) {
+    fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
+
+    // 将c.rgb赋值为最小值, min方法用于获取最小值
+    c.rgb = min(c.r, min(c.g, c.b));
+
+    o.Emission = c.rgb;
+    o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;反转色&lt;/h4&gt;
+&lt;p&gt;反转色就是取互补值得颜色嘛,用最大值减去当前颜色就行了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutput o) {
+    fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
+
+    // 最大值白色值为1
+    c.rgb = 1 - c.rgb;
+
+    o.Emission = c.rgb;
+    o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;纹理混合&lt;/h2&gt;
+&lt;p&gt;纹理混合就是同时显示两张纹理,原理是将两张纹理对应坐标的颜色采用一个计算方式混合生成新的颜色,纹理的混合有很多种方式,像常见的有正片叠底,这里就使用正片叠底来作为例子,其他的混合方式可以网上搜索,后面我会给出一个公式参考图.&lt;/p&gt;
+&lt;p&gt;在Properties中增加一个纹理属性&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+    _MainTex (&quot;Main Texture&quot;, 2D) = &quot;white&quot; {}
+    // 新增一个用于混合的纹理属性
+    _MixTex (&quot;Mix Texture&quot;, 2D) = &quot;white&quot; {}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;在surf函数中使用,别忘了声明这个变量.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void surf(Input IN, inout SurfaceOutput o) {
+    // 贴图
+    fixed4 c_main = tex2D(_MainTex, IN.uv_MainTex);
+    // 获取混合纹理的采样颜色
+    fixed4 c_mix = tex2D(_MixTex, IN.uv_MainTex);
+    // 两个颜色相乘
+    fixed4 c = c_main * c_mix;
+
+    o.Emission = c.rgb;
+    o.Alpha = c.a;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后找一张用于混合的纹理,查看效果吧.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;供参考的公式:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;shader_img2.jpg&quot; alt=&quot;混合公式&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;来源: &amp;lt;a href=&quot;https://jingyan.baidu.com/article/36d6ed1f7c04801bcf4883c2.html&quot;&amp;gt;https://jingyan.baidu.com/article/36d6ed1f7c04801bcf4883c2.html&amp;lt;/a&amp;gt;&lt;/p&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(二)</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote2/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote2/</guid><pubDate>Fri, 16 Aug 2019 13:39:53 GMT</pubDate><content:encoded>&lt;p&gt;上一篇的内容量很少,但是疑问却有不少,比如属性,变量,输入/输出结构体,这一篇专门做一个解释.&lt;/p&gt;
+&lt;p&gt;本文:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Properties属性类型&lt;/li&gt;
+&lt;li&gt;Shader变量类型&lt;/li&gt;
+&lt;li&gt;SurfaceOutput结构体&lt;/li&gt;
+&lt;li&gt;Input结构体&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;Properties属性类型&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+    // 基本数值类型
+    _Int (&quot;Int&quot;, Int) = 0
+    _Float (&quot;Float&quot;, Float) = 0
+    // 数值范围类型,限定了数值的范围,可以在Unity Inspector窗口中通过滑动条赋值
+    _Range (&quot;Range&quot;, Range(0, 1)) = 0.5
+    // 表示颜色
+    _Color (&quot;Color&quot;, Color) = (1, 1, 1, 1)
+    // 表示一个思维向量
+    _Vector (&quot;Vector&quot;, Vector) = (0, 0, 0, 0)
+    // 下面皆为纹理类型
+    _2D (&quot;2D&quot;, 2D) = &quot;white&quot; {}
+    _3D (&quot;3D&quot;, 3D) = &quot;white&quot; {}
+    _Cube (&quot;Cube&quot;, Cube) = &quot;white&quot; {}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Shader变量类型&lt;/h2&gt;
+&lt;p&gt;数值类型有三类&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;float&lt;/code&gt;表示高精度浮点数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;half&lt;/code&gt;表示中精度浮点数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;fixed&lt;/code&gt;表示低精度浮点数&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;int&lt;/code&gt;整数类型&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bool&lt;/code&gt;bool类型
+在以上数值类型的基础上,又有组合类型,例如:&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;float2,float3,float4&lt;/code&gt;分别表示float类型的二维,三维,四维向量,其他类型同理&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;float4x4&lt;/code&gt;表示4x4矩阵
+表示纹理的类型&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;sampler2D, sampler3D, samplerCUBE&lt;/code&gt;分别对应Properties中的2D,3D,Cube&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;SurfaceOutput结构体&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;struct SurfaceOutput {
+    // 漫反射颜色
+    fixed3 Albedo;
+    // 法线向量
+    fixed3 Normal;
+    // 自发光颜色
+    fixed3 Emission;
+    // 高光值,范围是(0~1)
+    half Specular;
+    // 高光强度
+    fixed Gloss;
+    // 透明度
+    fixed Alpha;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Input结构体&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;struct Input {
+    // 表示纹理坐标,必须uv打头
+    float2 uv_MainTex;
+    // 视图方向
+    float3 viewDir;
+    // 屏幕坐标
+    float4 screenPos;
+    // 世界坐标
+    float3 worldPos;
+    // 世界中的反射向量
+    float3 worldRefl;
+    // 世界中的法线向量
+    float3 worldNormal;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;参考文章:&amp;lt;a href=&quot;http://www.cnblogs.com/-867259206/p/5596698.html&quot;&amp;gt;http://www.cnblogs.com/-867259206/p/5596698.html&amp;lt;/a&amp;gt;&lt;/p&gt;
+</content:encoded></item><item><title>C++中,值、引用、指针在传递时的注意事项</title><link>https://xmfrostless.github.io/posts/code/cpp/passingtype/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cpp/passingtype/</guid><description>借参数传递说说C++中的值、引用、指针</description><pubDate>Wed, 14 Aug 2019 08:49:08 GMT</pubDate><content:encoded>&lt;p&gt;借参数传递说说C++中的值、引用、指针, 这是c++必须要掌握的要点,也是C++的一个难点,所以想写下我的理解,说说在赋值和传递时的区别的注意事项.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;值,引用,指针&lt;/li&gt;
+&lt;li&gt;*右值引用和移动构造&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;值,引用,指针&lt;/h2&gt;
+&lt;p&gt;这里用一个例子&lt;/p&gt;
+&lt;h4&gt;参数传递/返回值&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;struct Vec2 {
+    float x;
+    float y;
+};
+
+class A {
+public:
+    // 值传递
+    void setPosition(Vec2 pos); 
+    // 引用传递
+    void setPosition(const Vec2&amp;amp; pos);
+    // 指针传递
+    void setPosition(const Vec2* pos); 
+
+    // 返回值对象
+    Vec2 getPosition() const; 
+    // 返回引用对象
+    const Vec2&amp;amp; getPosition() const; 
+    // 返回指针对象
+    const Vec2* getPosition() const; 
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;三种方式的区别:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;引用本身占用4个字节&lt;/li&gt;
+&lt;li&gt;值传递会创建一个临时对象,意味着分配多余的空间&lt;/li&gt;
+&lt;li&gt;指针可能为空或野指针&lt;/li&gt;
+&lt;li&gt;加const是防止函数内修改参数对象本身&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;  值传递会创建一个该类型的临时对象,而引用传递不会创建这个对象,但会创建引用,所以,当传递的值在创建时需要的空间大于4字节的时候,使用值传递就不那么好了,一般情况下,内置的基本数据类型像int,float,char这类,都不用使用引用传递,而直接传值,像自定义的类都推荐使用引用传递.&lt;br /&gt;
+  至于不使用指针传递,是因为,指针有可能为nullptr类型或者野指针问题,安全性不如引用类型.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;返回引用或指针时需要考虑该对象是否被释放&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;  在返回值中,如果返回的对象不会立即释放,也返回const引用,&lt;strong&gt;不过接收返回值的时候,也要使用const引用去接收,这时最容易被忽略的&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;const auto&amp;amp; retValue = getPosition();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;br&amp;gt;&lt;/p&gt;
+&lt;h2&gt;*右值引用和移动构造&lt;/h2&gt;
+&lt;p&gt;扩展一下,在C++11中,增加了右值引用的概念,右值引用需要结合移动构造来使用&lt;/p&gt;
+&lt;p&gt;在写一个class的时候,会默认创建一个无参构造函数和一个拷贝构造函数,现在构造函数家族又新增加了一个移动构造函数&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;右值引用看作是一个服务于参数的特殊引用类型&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;移动构造必须自行实现&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;如果没有实现移动构造,右值引用赋值时将视为普通拷贝构造&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;class A {
+public:
+    // 构造函数
+    A(); 
+    // 拷贝构造函数
+    A(const A&amp;amp; a); 
+    // 移动构造函数
+    A(A&amp;amp;&amp;amp; a); 
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;  在stl中有一个方法&lt;code&gt;std::move&lt;/code&gt;用于将一个普通类型转换为右值引用,该方法实际上就相当于&lt;code&gt;static_cast&amp;lt;T&amp;amp;&amp;amp;&amp;gt;(value)&lt;/code&gt;,所以网上常说的,std::move没有move任何东西,它本质上就是做了一个类型转换,将一个普通类型转换为右值引用类型,那么转换为右值引用后该怎么用呢,这就要结合参数了,当你写了一个方法的参数使用了右值引用类型,那么这是就会调用它了,最大的作用目前是在移动构造函数了,所以我理解为,右值引用是一个服务于参数的类型&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;A value1;
+A value2 = std::move(value1); // 将调用移动构造创建这个对象
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这个移动构造,最大的用处还是在stl容器的使用上&lt;/p&gt;
+&lt;p&gt;比如需要转移一个容器内的数据:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;std::vector&amp;lt;int&amp;gt; temp { 1, 2, 3 };
+/**
+    这时,将会调用std::vector的移动构造,
+    而实现里面会将temp的指针转移到temp2上,
+    而temp将会为空(约定上temp将已经被释放)
+*/
+auto temp2 = std::move(temp);
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>介绍一下自己写的GameScript</title><link>https://xmfrostless.github.io/posts/code/script/introduce/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/script/introduce/</guid><pubDate>Fri, 26 Jul 2019 17:10:08 GMT</pubDate><content:encoded>&lt;p&gt;因为想在项目中使用脚本,目前最常见的就是使用Lua,但是像XLua,NLua之类的太庞大了,多平台支持也很依赖官方给的lib库,因为在我的项目中使用脚本只是一小部分,比如剧情这部分.所以我只需要一个能够执行命令的脚本就已经满足我的需求,但是,有时候设计的时候,想的太多,写着写着就.....&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2&gt;介绍&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;函数式结构&lt;/li&gt;
+&lt;li&gt;基于.net开发,跨平台,支持Unity&lt;/li&gt;
+&lt;li&gt;嵌入式,接入方便,简单易用&lt;/li&gt;
+&lt;li&gt;类C语法&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;使用场合&lt;/h2&gt;
+&lt;p&gt;  脚本不需要编译,被当做资源使用,所以优点是支持生产环境下修改,当某些内容需要频繁修改的时候,适合使用脚本,但是脚本的运行效率比较低,不适合高性能场合使用.&lt;br /&gt;
+  我觉得,脚本更适合需要大量内容生产的环境使用,因为需要频繁修改,使用脚本可以提高开发效率,减少工作流程,比如游戏开发中的剧情部分.&lt;br /&gt;
+  其实很多内容使用良好的结构+配置就已经可以做到很好的效果,不过使用脚本,更明显的优势是更容易的支持逻辑判断.&lt;/p&gt;
+&lt;h2&gt;函数式结构&lt;/h2&gt;
+&lt;p&gt;任何被执行的代码片段都看作为一个函数调用,因此一个脚本文件为一个函数,函数内可以嵌套定义函数,一个函数可看作为一个空间作用域,子作用域可以调用父作用域中的方法和变量&lt;/p&gt;
+&lt;h2&gt;数据类型&lt;/h2&gt;
+&lt;p&gt;GameScript是动态类型,但本质上会根据值来动态确定类型&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;null&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;number&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;string&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bool&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;脚本代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;// 定义一个变量,变量必须要赋初值
+var value1 = null;
+var value2 = 10;
+var value3 = &quot;HelloWorld&quot;;
+var value4 = true;
+var value5 = false;
+
+// 赋值
+value1 = 1234;
+value1 = &quot;string&quot;;
+
+// 表达式 
+var num1 = 100 * (5 + 3);
+var num2 = num1 / 100;
+
+// 条件语句
+if (num2 &amp;gt; 1000) {
+    print(&quot;1000&quot;);
+} else if (num2 &amp;gt; 100) {
+    print(&quot;100&quot;);
+} else {
+    print(&quot;no&quot;);
+}
+
+// 循环语句
+var x = 3;
+while(x &amp;gt; 0) {
+    print(x);
+    x = x - 1;
+}
+
+// 定义一个无参的函数
+Method0() {
+    // print为内置方法
+    print(&quot;Hello World&quot;);
+}
+
+// 带一个参数的函数
+Method1(message) {
+    print(message);
+}
+
+// 函数的调用 
+Method0(); // print &quot;Hello World&quot;
+Method1(&quot;Hello Method1&quot;);
+Method1(100 * 5);
+
+// 带返回值的函数
+// 如果不写return语句,则默认返回null
+Method2() {
+    return 0;
+}
+
+// 实现一个返回最大数的函数
+Max(a, b) {
+    if (a &amp;gt;= b) {
+        return a;
+    }
+    return b;
+}
+
+// 函数空间 
+SpaceMethod1() {
+    SpaceMethod2() {
+        SpaceMethod3() {
+            // ...
+            // 可调用所有上层空间内的变量和方法
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;C#中&lt;/h2&gt;
+&lt;h3&gt;注册C#方法&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;/// &amp;lt;summary&amp;gt;
+/// 注册C#方法的方法 RegisterFunction
+/// &amp;lt;/summary&amp;gt;
+/// &amp;lt;param name=&quot;name&quot;&amp;gt;方法名&amp;lt;/param&amp;gt;
+/// &amp;lt;param name=&quot;func&quot;&amp;gt;回调&amp;lt;/param&amp;gt;
+/// &amp;lt;result&amp;gt;注册成功则返回true&amp;lt;/result&amp;gt;
+public static bool RegisterFunction(string name, Func&amp;lt;List&amp;lt;VMValue&amp;gt;, VMValue&amp;gt; func);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 在C#中
+// 例如注册一个求和方法 sum
+gs.VM.RegisterFunction(&quot;sum&quot;, (List&amp;lt;gs.VMValue&amp;gt; tempArgs) =&amp;gt; {
+    double ret = 0;
+    foreach (var num in tempArgs) {
+        if (num.IsNumber()) {
+            ret += num.GetNumber();
+        }
+    }
+    return new gs.VMValue(ret);
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 在 GameScript 脚本中就可以使用了
+var value = sum(10, 20, 30);
+print(value);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;调用脚本&lt;/h3&gt;
+&lt;p&gt;新建一个文本文件,例如 main.gs&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// C#代码中
+// 读取脚本的全部内容
+var src = File.ReadAllText(&quot;main.gs&quot;);
+// Load方法加载一个脚本,并返回此函数对象(一个脚本本身是一个函数)
+VMFunction gsFunc = gs.VM.Load(src);
+// 执行
+gsFunc.Execute();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;VMValue&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;VMValue&lt;/code&gt;是一个兼容的值类型,提供了一系列方法便于对脚本值和C#值之间的操作,通过&lt;code&gt;new VMValue(object)&lt;/code&gt;可以创建对象.&lt;/p&gt;
+&lt;h4&gt;VMFunction&lt;/h4&gt;
+&lt;p&gt;&lt;code&gt;VMFunction&lt;/code&gt;表示一个脚本函数,提供在C#中对脚本中的函数调用,提供&lt;code&gt;GetFunction(name)&lt;/code&gt;方法可以获取当前函数空间下的子函数&lt;/p&gt;
+&lt;h2&gt;最后&lt;/h2&gt;
+&lt;p&gt;在C#工程或者Unity中都可以直接使用,感兴趣的可以下载玩玩,可能有人觉得是在做无用功,但是我觉得很有意义,而且我会在我自己的项目中使用,最主要的写这些东西让我找到了编程的乐趣.&lt;/p&gt;
+&lt;p&gt;github: &amp;lt;a href=&quot;https://github.com/xmfrostless/GameScript&quot; target=&quot;_blank&quot;&amp;gt;https://github.com/xmfrostless/GameScript&amp;lt;/a&amp;gt;&lt;/p&gt;
+</content:encoded></item><item><title>简单的Unity UI框架</title><link>https://xmfrostless.github.io/posts/code/unity/uimodel/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/uimodel/</guid><description>如何写一个简单的UI框架,满足基本的UI管理</description><pubDate>Tue, 23 Jul 2019 15:06:22 GMT</pubDate><content:encoded>&lt;p&gt;这是一个非常非常Pure的UI框架,很适合小型项目,在我写的项目中,经过大量的UI开发,这个框架稳定,易用并满足需求.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;设计&lt;/li&gt;
+&lt;li&gt;UI生命周期&lt;/li&gt;
+&lt;li&gt;UiModel类&lt;/li&gt;
+&lt;li&gt;UiStack类&lt;/li&gt;
+&lt;li&gt;使用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;设计&lt;/h2&gt;
+&lt;p&gt;1.UI的打开和关闭需要统一接口,便于调试和管理
+2.UI打开和关闭可能会有动画效果,关闭效果播完然后才删除&lt;br /&gt;
+3.当打开新的UI后,下层UI可以得到通知,相应的,当关闭UI时,下层UI也会得到通知&lt;br /&gt;
+4.UI本身是可以支持跳转到其他UI的,所以支持自身直接打开新的UI,或者关闭UI&lt;/p&gt;
+&lt;h2&gt;UI生命周期&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;ui_model_life_cycle_graph.png&quot; alt=&quot;LifeCircle&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;void OnCreate()&lt;/code&gt;&lt;/strong&gt; push时立即调用,一般在此方法中获取自身组件,处理自身初始化状态等自身相关操作&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnOpen()&lt;/code&gt;&lt;/strong&gt; 用于初始化,注册消息,添加监听等涉及到外部类的状态的操作&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnOpenAction()&lt;/code&gt;&lt;/strong&gt; 发生在OnOpen之后,在此方法中写打开动画的代码&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnUppublished()&lt;/code&gt;&lt;/strong&gt; 每帧调用&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnPause()&lt;/code&gt;&lt;/strong&gt; 当有新的界面被Push时调用,当前界面失去焦点,此方法处理一些需要暂停的操作&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnResume()&lt;/code&gt;&lt;/strong&gt; 当新的界面被Pop时调用,当前界面变为焦点,恢复刚刚暂停的操作&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;float OnCloseAction()&lt;/code&gt;&lt;/strong&gt; 自身被Pop时调用,用于执行关闭的动画,返回动画需要的时间,时间过后会删除自身&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnClose()&lt;/code&gt;&lt;/strong&gt; 关闭界面,用于释放资源,注销消息,删除监听等操作&lt;br /&gt;
+&lt;strong&gt;&lt;code&gt;void OnRelease()&lt;/code&gt;&lt;/strong&gt; 被Destroy时调用&lt;/p&gt;
+&lt;h2&gt;UiModel类&lt;/h2&gt;
+&lt;p&gt;约束生命周期的UI基类,具体的UI类去继承它,实现需要的生命周期方法&lt;/p&gt;
+&lt;p&gt;这个类中,将Unity自带的&lt;code&gt;Awake&lt;/code&gt;,&lt;code&gt;Start&lt;/code&gt;,&lt;code&gt;OnDestroy&lt;/code&gt;,&lt;code&gt;Uppublished&lt;/code&gt;实现了,一方面是不希望子类再去实现这些方法(子类再实现这些方法会出现警告),另一方面将方法转发给对应的生命周期函数,这样也是便于管理&lt;/p&gt;
+&lt;p&gt;结合&lt;code&gt;UiStack&lt;/code&gt;类,每个&lt;code&gt;UiModel&lt;/code&gt;都会存在于一个&lt;code&gt;UiStack&lt;/code&gt;类中,因此获取到对方的引用将有利于一些操作,当然不希望外部去使用,作为private对象
+这样一来,可以提供&lt;code&gt;Close&lt;/code&gt;方法和&lt;code&gt;PushUI&lt;/code&gt;方法,这样可以让具体的子类UI无需再获取到&lt;code&gt;UiStack&lt;/code&gt;就可以打开新的界面和关闭自身界面&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;using UnityEngine;
+using UnityEngine.UI;
+
+[RequireComponent(typeof(RectTransform))]
+public class UiModel : MonoBehaviour {
+
+    private UiStack _uiStack = null;
+
+    protected void Awake() {
+        OnCreate();
+    }
+
+    protected void Start() {
+        OnOpen();
+        OnOpenAction();
+    }
+
+    protected void OnDestroy() {
+        OnRelease();
+    }
+
+    protected void Uppublished() {
+        OnUppublished();
+    }
+
+    public UiModel PushUI(GameObject prefab) {
+        if (!_uiStack) { return null; }
+        return _uiStack.Push(prefab);
+    }
+
+    public T PushUI&amp;lt;T&amp;gt;(GameObject prefab) where T : UiModel {
+        return PushUI(prefab) as T;
+    }
+
+    public void Close() {
+        if (_uiStack) {
+            _uiStack.Pop();
+        }
+    }
+
+    public void _BindUiStack(UiStack uiStack) {
+        _uiStack = uiStack;
+    }
+
+    // =================== life circle ===================
+
+    public virtual void OnCreate() { }
+    public virtual void OnOpen() { }
+    public virtual void OnOpenAction() { }
+
+    public virtual void OnPause() { }
+    public virtual void OnResume() { }
+
+    public virtual void OnUppublished() { }
+    public virtual float OnCloseAction() { return 0; }
+    public virtual void OnClose() { }
+    public virtual void OnRelease() { }
+
+    // ====================== end =====================
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;UiStack类&lt;/h2&gt;
+&lt;p&gt;这是一个Ui栈,主要就是管理&lt;code&gt;UiModel&lt;/code&gt;
+主要方法就是&lt;code&gt;Push&lt;/code&gt;,&lt;code&gt;Pop&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;UiModel Push(GameObject prefab)&lt;/code&gt;传入一个事先制作好的UI Prefab,打开这个UI并返回&lt;code&gt;UiModel&lt;/code&gt;对象
+&lt;code&gt;void Pop()&lt;/code&gt;弹出当前焦点UI&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+[RequireComponent(typeof(Canvas))]
+[RequireComponent(typeof(CanvasScaler))]
+[RequireComponent(typeof(CanvasGroup))]
+[RequireComponent(typeof(GraphicRaycaster))]
+[RequireComponent(typeof(RectTransform))]
+public sealed class UiStack : MonoBehaviour {
+
+    private RectTransform _rectTransform = null;
+    private LinkedList&amp;lt;UiModel&amp;gt; _uiStack = new LinkedList&amp;lt;UiModel&amp;gt;();
+
+    public Canvas canvas { get; private set; }
+
+    private void Awake() {
+        _rectTransform = GetComponent&amp;lt;RectTransform&amp;gt;();
+        canvas = GetComponent&amp;lt;Canvas&amp;gt;();
+    }
+
+    private void OnDestroy() {
+        Clear();
+    }
+
+    public UiModel Push(GameObject prefab) {
+        if (!prefab) {
+            Debug.LogError(&quot;The prefab is null!&quot;);
+            return null;
+        }
+        if (!prefab.GetComponent&amp;lt;UiModel&amp;gt;()) {
+            Debug.LogError(&quot;It&apos;s not a UiModel object!&quot;);
+            return null;
+        }
+
+        var last = (_uiStack.Last != null) ? _uiStack.Last.Value : null;
+        if (last) {
+            last.OnPause();
+        }
+
+        var model = _InstantiateModel(prefab);
+        _uiStack.AddLast(model);
+        model._BindUiStack(this);
+        return model;
+    }
+
+    public T Push&amp;lt;T&amp;gt;(GameObject prefab) where T : UiModel {
+        return Push(prefab) as T;
+    }
+
+    public void Pop() {
+        if (_uiStack.Last == null) { return; }
+        var model = _uiStack.Last.Value;
+        _uiStack.RemoveLast();
+        if (model) {
+            model._BindUiStack(null);
+            var delay = model.OnCloseAction();
+            var last = (_uiStack.Last != null) ? _uiStack.Last.Value : null;
+            if (last) {
+                last.OnResume();
+            }
+            model.OnClose();
+            Destroy(model.gameObject, delay);
+        }
+    }
+
+    public void Clear() {
+        while (_uiStack.Last != null) {
+            Pop();
+        }
+    }
+
+    public void Pause() {
+        var last = (_uiStack.Last != null) ? _uiStack.Last.Value : null;
+        if (last) {
+            last.OnPause();
+        }
+    }
+
+    public void Resume() {
+        var last = (_uiStack.Last != null) ? _uiStack.Last.Value : null;
+        if (last) {
+            last.OnResume();
+        }
+    }
+
+    private UiModel _InstantiateModel(GameObject prefab) {
+        var modelObj = Instantiate(prefab, _rectTransform);
+        modelObj.name = prefab.name;
+        var modelTransform = modelObj.GetComponent&amp;lt;RectTransform&amp;gt;();
+        modelTransform.localScale = Vector3.one;
+        modelTransform.localPosition = Vector3.zero;
+        var model = modelObj.GetComponent&amp;lt;UiModel&amp;gt;();
+        return model;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>Unity表面着色器笔记(一)</title><link>https://xmfrostless.github.io/posts/code/unity/surfaceshadernote1/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/surfaceshadernote1/</guid><pubDate>Mon, 17 Jun 2019 10:16:25 GMT</pubDate><content:encoded>&lt;p&gt;对Shader是又喜欢又苦恼,几年来,一直断断续续的接触又放弃,因为对于Shader,要学的东西太多太多了,它不像写逻辑,再复杂的功能也能一点点攻克,它是真的让我感觉到脑袋不够用了,是硬伤.但是,掌握Shader很有必要,所以我又双叒叕来看Shader了,而这次,得利于Unity的表面着色器,让Shader入门简单了一些,嗯,看了一周,做点笔记.&lt;/p&gt;
+&lt;p&gt;本文:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Shader&lt;/li&gt;
+&lt;li&gt;UnityShader&lt;/li&gt;
+&lt;li&gt;UnitySurfaceShader&lt;/li&gt;
+&lt;li&gt;一个改变颜色的小例子&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;Shader&lt;/h2&gt;
+&lt;p&gt;简单来说&lt;code&gt;Shader&lt;/code&gt;就是一段程序,可以操作&lt;code&gt;顶点&lt;/code&gt;和&lt;code&gt;像素&lt;/code&gt;.我们知道计算机中图形是由三角形组成的,一个三角形有三个点,&lt;code&gt;顶点&lt;/code&gt;指的就是这三个点,而&lt;code&gt;像素&lt;/code&gt;不用多说,都懂,&lt;code&gt;Shader&lt;/code&gt;就是可以操作这些东西的&lt;code&gt;位置&lt;/code&gt;和&lt;code&gt;颜色&lt;/code&gt;,从而实现很多效果.&lt;/p&gt;
+&lt;p&gt;目前有三大Shader语言
+&lt;code&gt;GLSL&lt;/code&gt;是OpenGL支持的Shader语言
+&lt;code&gt;HLSL&lt;/code&gt;是微软DirectX支持的Shader语言,而DX只支持Windows设备,所以不具备跨平台性
+&lt;code&gt;CG&lt;/code&gt;是微软和Nvidia合作开发的Shader语言,它支持跨平台,非常类似&lt;code&gt;HLSL&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;UnityShader&lt;/h2&gt;
+&lt;p&gt;Unity中的&lt;code&gt;ShaderLab&lt;/code&gt;主要基于&lt;code&gt;CG&lt;/code&gt;语言.&lt;/p&gt;
+&lt;p&gt;Unity中的Shader分为三类:
+&lt;code&gt;固定功能着色器&lt;/code&gt;对应旧式的固定渲染管线,这里不考虑了,基本上用不到
+&lt;code&gt;顶点/片元着色器&lt;/code&gt;就是通常的Shader
+&lt;code&gt;表面着色器&lt;/code&gt;是Unity中特有的,可以理解为是对&lt;code&gt;顶点/片元着色器&lt;/code&gt;的再一次抽象,Unity最终会将其编译为&lt;code&gt;顶点/片元着色器&lt;/code&gt;代码,它简单一些,也更适合作为入门来学习Shader&lt;/p&gt;
+&lt;h2&gt;UnitySurfaceShader&lt;/h2&gt;
+&lt;p&gt;我还是比较推荐从&lt;code&gt;表面着色器&lt;/code&gt;开始学习的,一方面简单一些,另一方面可以更快的写出一些不错的效果,并且使用在自己的项目上.我也正是在学习这个,当然,最终目标还是要掌握&lt;code&gt;顶点/片元着色器&lt;/code&gt;的.&lt;/p&gt;
+&lt;p&gt;下面就开始详细讲解&lt;code&gt;表面着色器&lt;/code&gt;了:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;新建一个表面着色器代码文件&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;在Unity的Project视窗下新建一个Shader文件.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;image1.png&quot; alt=&quot;新建&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;打开文件,可以看到Unity生成的一堆模板代码,有一堆,莫慌,下面就来拆解它.&lt;/p&gt;
+&lt;h3&gt;Shader结构&lt;/h3&gt;
+&lt;p&gt;忽略中间的代码,关注到第一行的结构,如下:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/NewSurfaceShader&quot; {
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;在UnityShader中,所有的Shader代码都被包括在这里面,跟在&lt;code&gt;Shader&lt;/code&gt;关键词后面双引号中的内容表示这个Shader在Unity视窗里选择Shader时的路径,如下:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;image2.png&quot; alt=&quot;2&quot; /&gt;
+&lt;img src=&quot;image3.png&quot; alt=&quot;3&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Properties&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;Properties {
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Properties&lt;/code&gt;中用来定义一些输入属性,即一些参数,这些参数可以在后面的代码中使用,作为外部调节具体细节的变量,如果没有变量,也可以不写,内部属性的定义后面再说&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;SubShader&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;SubShader {
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;SubShader&lt;/code&gt;就是具体实现效果的部分,可以有多个&lt;code&gt;SubShader&lt;/code&gt;,当存在多个时,会按顺序从上到下检测条件,直到找到一个符合条件可以执行的SubShader然后执行&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;FallBack&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;FallBack &quot;Diffuse&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;如果所有的SubShader都不满足条件执行,那么会执行后面的&lt;code&gt;FallBack&lt;/code&gt;中指定的内置Shader, 这里的&lt;code&gt;&quot;Diffuse&quot;&lt;/code&gt;表示一个内置Shader的名称,Diffuse即漫反射&lt;/p&gt;
+&lt;h3&gt;SubShader结构&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Tags&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;Tags {
+    &quot;RenderType&quot;=&quot;Opaque&quot;
+    /*
+    &quot;Name1&quot;=&quot;Value1&quot;
+    &quot;Name2&quot;=&quot;Value2&quot;
+    ...
+    */
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;此项可以不写,&lt;code&gt;Tags&lt;/code&gt;就相当于一个标签,给这个SubShader指定的标签,这个暂时不关心,忽略就好&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;对于&lt;code&gt;&quot;RenderType&quot;=&quot;Opaque&quot;&lt;/code&gt;的含义,可以简单理解为不透明的渲染方式,但实际上这个生效的意义需要配合额外的代码控制&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;LOD&lt;/strong&gt;
+此项可以不写,&lt;code&gt;LOD&lt;/code&gt;用来表示这个SubShader的细节层次,这里使用默认的200就好,或者可以不写,暂不关心.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;em&gt;实际上这个值也要配合额外的代码才会生效,例如&lt;code&gt;Shader.globalMaximumLOD = 100;&lt;/code&gt;,则表示设置当前全局Shader的&lt;code&gt;LOD小于等于100&lt;/code&gt;的才会被执行,这个值若不设置默认为&lt;code&gt;int.MaxValue&lt;/code&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;CGPROGRAM 和 ENDCG&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;重点部分来了,&lt;code&gt;CGPROGRAM&lt;/code&gt;和&lt;code&gt;ENDCG&lt;/code&gt;是一组关键词,就像C#中的&lt;code&gt;#region&lt;/code&gt;和&lt;code&gt;#endregion&lt;/code&gt;一样,被包括的部分正是我们需要实现各种效果的CG代码&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;CGPROGRAM
+    ...
+ENDCG
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;对于这里的内容,后面结合一个小例子来讲.&lt;/p&gt;
+&lt;p&gt;到这里,整个Unity的Shader结构就搞清楚了,下面贴一个结构部分的整体代码:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/ShaderDemo1&quot; {
+    Properties {
+    }
+    SubShader {
+        // Tags { }
+        // LOD 200
+        CGPROGRAM
+        ENDCG
+    }
+    FallBack &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;一个改变颜色的小例子&lt;/h3&gt;
+&lt;p&gt;到这里,已经迫不及待想要自己写一个试试了,那么开始吧.我们自己新建一个空白文本来写Shader,这样利于学习,思路清晰.下面就一步一步来写一个最最最基础的改变颜色的着色器,以此来开启大门&lt;/p&gt;
+&lt;p&gt;完整代码,下面将在注释上讲解:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Shader &quot;Custom/ShaderDemo1&quot; {
+    Properties {
+        /**
+        这里是定义了一个属性,它的定义方式是 `变量名(&quot;说明&quot;, 类型) = 默认值`
+        这里表示定义了一个Color类型的变量_Color, 默认RGBA是(1, 1, 1, 1)
+        */
+        _Color (&quot;Color&quot;, Color) = (1, 1, 1, 1)
+    }
+    SubShader {
+    // =============================================================
+        CGPROGRAM
+        /**
+        这是一个预编译命令,用于指明这是一个`表面着色器`
+        `surface`表示这是一个`表面着色器`
+        `surf`用于声明调用的函数
+        `Lambert`表示采用内置默认的Lambert光照模型,详情可以自行搜索`Lambert光照模型`
+        */
+        #pragma surface surf Lambert
+
+        /**
+        这是一个结构体,上面声明的`surf`函数需要一个输入的参数正是这个结构体,里面的成员变量是可变的
+        `float2`表示两个float组成的结构体,可以通过下标访问,也可以通过`.x`,`.y`,`.z`或者`.r`,`.g`,`.b`这种形式来访问
+        `uv_MainTex`这个成员变量表示纹理坐标,`uv`作为打头是必须的,表示它是一个纹理坐标
+        这个结构体在这个例子中并没有用到,我们只要定义它就好了,可以暂时不关心
+        */
+        struct Input {
+            float2 uv_MainTex;
+        };
+        
+        /**
+        这里需要再定义一下这个变量,变量名与上面`Properties`中一样,这样就会获得到属性中设置的值
+        这里是必须再定义一下的,否则是获取不到上面`Properties`中的值的
+        */
+        fixed4 _Color;
+
+        /**
+        这个正是上面我们指定的函数`surf`
+        参数1:是输入的数据,它会将当前使用这个Shader的物体上的纹理坐标传入过来
+        参数2:`SurfaceOutput`是一个输出的数据结构,是Unity内置的,描述了最终显示需要的颜色和数据
+        所以,我们根据`Input`数据,计算出想要的结果给`SurfaceOutput`
+        */
+        void surf(Input IN, inout SurfaceOutput o) {
+            /**
+            Albedo是`SurfaceOutput`中的成员变量,表示反射的颜色,这里简单理解为物体的颜色
+            `_Color.rgb`表示将`rgb`的值作为最终显示的颜色,`Albedo`不包含透明
+            */
+            o.Albedo = _Color.rgb;
+            // Alpha 表示透明值
+            o.Alpha = _Color.a;
+        }
+        ENDCG
+    // =============================================================
+    }
+    FallBack &quot;Diffuse&quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;到这里,一个Shader就写完了,Shader需要结合材质一起才能看到效果,在Unity中创建一个&lt;code&gt;Cube&lt;/code&gt;,然后在Project下新建一个&lt;code&gt;Material&lt;/code&gt;材质文件,将&lt;code&gt;Shader&lt;/code&gt;拖到&lt;code&gt;Material&lt;/code&gt;上,将&lt;code&gt;Material&lt;/code&gt;拖到&lt;code&gt;Cube&lt;/code&gt;上,就可以看到效果了,会有一个颜色选择框,可以调节颜色.&lt;/p&gt;
+&lt;p&gt;Shader的路还很长,耐心并坚持,加油.&lt;/p&gt;
+&lt;hr /&gt;
+</content:encoded></item><item><title>UGUI动态创建Image保持宽高比和分辨率适配</title><link>https://xmfrostless.github.io/posts/code/unity/imageadapter/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/unity/imageadapter/</guid><pubDate>Mon, 03 Jun 2019 12:01:21 GMT</pubDate><content:encoded>&lt;p&gt;很多情况下没办法事先在编辑器中确定需要展示的Image,需要动态去创建,例如根据角色ID显示角色的立绘,本文讲一讲动态创建时需要注意的两个问题:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;保持宽高比&lt;/li&gt;
+&lt;li&gt;分辨率适配&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;关键代码&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;image.SetNativeSize();&lt;/code&gt; 设置为图片原本的大小
+&lt;code&gt;image.rectTransform.sizeDelta *= image.canvas.scaleFactor;&lt;/code&gt; 设置为当前分辨率适配&lt;/p&gt;
+&lt;h2&gt;动态创建Image&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;var sprite = Resources.Load&amp;lt;Sprite&amp;gt;(path);
+if (sprite) {
+    var image = new GameObject(&quot;image&quot;).AddComponent&amp;lt;Image&amp;gt;();
+    image.rectTransform.SetParent(_parentTransform);
+    image.sprite = sprite;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这样就动态创建了一个显示&lt;code&gt;path&lt;/code&gt;路径资源的Image图片,并且放在&lt;code&gt;_parentTransform&lt;/code&gt;对象下,但是这样创建出来的图像,宽高不正确并且被伸缩了,因此需要保持正确的宽高比&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;1.png&quot; alt=&quot;宽高比不正确&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;保持宽高比&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;image.SetNativeSize();
+image.rectTransform.sizeDelta *= _scale;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;image.SetNativeSize();&lt;/code&gt; 设置为图片原始的大小
+&lt;code&gt;image.rectTransform.sizeDelta&lt;/code&gt; 是图片当前显示的大小
+&lt;code&gt;_scale&lt;/code&gt; 是缩放比例,可以是一个确定值,当要改变图片大小时,通过这个方式,始终保持图片的宽高比&lt;/p&gt;
+&lt;p&gt;但是现在这样创建的图片,有一个问题,在运行时改变分辨率的话,只会对当前已创建的&lt;code&gt;Image&lt;/code&gt;适配分辨率,重新创建的&lt;code&gt;Image&lt;/code&gt;显示的大小仍然是原始大小,这里就需要手动适配&lt;/p&gt;
+&lt;p&gt;下面是分辨率从&lt;code&gt;1280x720&lt;/code&gt;改到&lt;code&gt;800x450&lt;/code&gt;后的结果:
+&lt;img src=&quot;2.png&quot; alt=&quot;没有适配分辨率&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;分辨率适配&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;image.rectTransform.sizeDelta *= image.canvas.scaleFactor;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;在创建时加上这行代码,就OK了&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;image.canvas.scaleFactor&lt;/code&gt; 获取当前分辨率的缩放比&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;3.png&quot; alt=&quot;正常显示&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;完整代码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;var sprite = Resources.Load&amp;lt;Sprite&amp;gt;(path);
+if (sprite) {
+    var image = new GameObject(&quot;image&quot;).AddComponent&amp;lt;Image&amp;gt;();
+    image.rectTransform.SetParent(_parentTransform);
+    image.sprite = sprite;
+    image.SetNativeSize();
+    image.rectTransform.sizeDelta *= image.canvas.scaleFactor;
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>多层if嵌套的优化</title><link>https://xmfrostless.github.io/posts/code/experience/ifnestedoptimization/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/experience/ifnestedoptimization/</guid><pubDate>Sun, 02 Jun 2019 21:48:18 GMT</pubDate><content:encoded>&lt;p&gt;在实际开发中,写了很多功能,也改了无数bug了,这次讲一讲代码书写方面的技巧.遇到就写一点,这次讲一讲如何写利于扩展的代码.&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;需求&lt;/h2&gt;
+&lt;p&gt;有这样一个需求,有3个物品的掉落池,分别为普通池,稀有池,传说池,概率分别为100%, 20%, 1.5%,一般上概率为了便于修改,会写在配置中,故有如下配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+    &quot;normal_percent&quot;:1,
+    &quot;rare_percent&quot;:0.2,
+    &quot;legend_percent&quot;:0.015
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后需求中要求,先随机是否为传说池,不是则随机是否为稀有池,最后是普通池&lt;/p&gt;
+&lt;h2&gt;直接编码&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;// 标记一个结果
+int ret = -1;
+// 获取传说池概率
+var legend = Config.GetFloat(&quot;legend_percent&quot;);
+// 随机工具判断是否命中概率
+if (RandomTool.HitWithPercent(legend)) {
+    ret = 2;
+} else {
+    // 以下同上,根据逻辑逐次判断
+    var rare = Config.GetFloat(&quot;rare_percent&quot;);
+    if (RandomTool.HitWithPercent(rare)) {
+        ret = 1;
+    } else {
+        var normal = Config.GetFloat(&quot;normal_percent&quot;);
+        if (RandomTool.HitWithPercent(normal)) {
+            ret = 0;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;显然上面的书写方式不太利于扩展,假设需求变更,要在稀有和传说中间加一个史诗池,那么会怎样?&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;int ret = -1;
+var legend = Config.GetFloat(&quot;legend_percent&quot;);
+if (RandomTool.HitWithPercent(legend)) {
+    ret = 3;
+} else {
+    // 要将史诗池的判断加在这里,然后后面的代码全部都要挪到else里面去
+    // 而且嵌套层次越来越多
+    var epic = Config.GetFloat(&quot;epic_percent&quot;);
+    if (RandomTool.HitWithPercent(rare)) {
+        ret = 2;
+    } else {
+        var rare = Config.GetFloat(&quot;rare_percent&quot;);
+        if (RandomTool.HitWithPercent(rare)) {
+            ret = 1;
+        } else {
+            var normal = Config.GetFloat(&quot;normal_percent&quot;);
+            if (RandomTool.HitWithPercent(normal)) {
+                ret = 0;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;换一种写法&lt;/h2&gt;
+&lt;p&gt;下面将换一种方式书写,但并不是最优方式,而是一个小技巧,这个小技巧用的还蛮多的,但是这里有更好的方式,最后再讲.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 利用do {} while(false)的方式,减少代码缩进,易于阅读,修改也更方便
+int ret = -1;
+do {
+    // 先判断传说的概率,满足了就break跳出循环,否则会继续后面的逻辑
+    var legend = Config.GetFloat(&quot;legend_percent&quot;);
+    if (RandomTool.HitWithPercent(legend)) {
+        ret = 2;
+        break;
+    }
+    var rare = Config.GetFloat(&quot;rare_percent&quot;);
+    if (RandomTool.HitWithPercent(rare)) {
+        ret = 1;
+        break;
+    }
+    var normal = Config.GetFloat(&quot;normal_percent&quot;);
+    if (RandomTool.HitWithPercent(normal)) {
+        ret = 0;
+        break;
+    }
+} while (false);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;像上面这样的书写,再加入一个史诗概率池进去,也不用改动其他部分的代码,而是在需要的位置,插入一段史诗的代码就可以了,非常简单的一个书写技巧,但是却使得后期维护和阅读都更加轻松.&lt;/p&gt;
+&lt;h5&gt;这个技巧使用的地方有很多,像嵌套很多的代码,都可以通过这个方式减少嵌套,非常推荐掌握&lt;/h5&gt;
+&lt;h2&gt;本例子更好的方式&lt;/h2&gt;
+&lt;p&gt;那么本例子其实还有一种更好的做法,当增加池的时候,甚至不需要改动随机部分的代码,只需要改动配置就达到需求了,主要是结合容器的使用&lt;/p&gt;
+&lt;p&gt;首先是配置部分需要换一种方式写:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+    &quot;drop_percent_0&quot;:1,
+    &quot;drop_percent_1&quot;:0.2,
+    &quot;drop_percent_2&quot;:0.015
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;将代码分为两个部分,初始化时载入所有概率到List中,其实也可以直接在处理随机的地方加载,但是这种数据是不会变的,所以可以放到这个类初始化的位置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 存放概率配置的容器
+List&amp;lt;float&amp;gt; _percentList = new List&amp;lt;float&amp;gt;();
+// 这里循环使用100表示上限支持最多100个池,也可以使用int max
+for (int i = 0; i &amp;lt; 100; ++i) {
+    // -1是默认值,当获取不到这个配置的时候,返回-1,则break跳出循环
+    var percent = Config.GetFloat(&quot;drop_percent_&quot; + i, -1);
+    if (percent == -1) { break; }
+    _percentList.Add(percent);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 随机部分代码
+// 从列表尾端开始循环,逐个判断,命中概率后获得当前的index即为结果然后break循环
+int ret = -1;
+for (int i = _percentList.Count - 1; i &amp;gt;= 0; --i) {
+    var percent = _percentList[i];
+    if (RandomTool.HitWithPercent(percent)) {
+        ret = i;
+        break;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;使用上面这种方法,无论是加池减池,都不用再改动代码了,这个技巧也可以用在很多其他地方&lt;/p&gt;
+&lt;p&gt;本文就到这里了,以后当遇到合适的技巧,再继续写哈哈.&lt;/p&gt;
+</content:encoded></item><item><title>Cocos2dx中实现一套富文本解析语法</title><link>https://xmfrostless.github.io/posts/code/cocos/parserichgrammar/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/cocos/parserichgrammar/</guid><description>Hello World!;(s)32;(c)f00f(f)msg.ttf | I&apos;m Jenocn;(s)24;(c)99ff | (i)avatar.jpg</description><pubDate>Tue, 07 May 2019 21:03:16 GMT</pubDate><content:encoded>&lt;p&gt;最近负责开发的模块中有一个显示公告的需求,公告中特殊的文字需要变色,很明显,使用富文本能够很轻松的实现,但是,直接写死很明显不是我的方式,于是决定写一套解析语法,以应变以后其他地方再出现这样的需求.&lt;/p&gt;
+&lt;p&gt;本文从以下几点讲解:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;分析和设计&lt;/li&gt;
+&lt;li&gt;实现&lt;/li&gt;
+&lt;li&gt;源码&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;分析和设计&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;我希望使用的方式非常简单,并且将解析和&lt;code&gt;RichText&lt;/code&gt;的创建分离,这样的好处是以后可以随时替换显示的方式,也便于维护,这样一来,显示部分非常简单,就是根据解析后生成的数据来逐一创建就可以了.&lt;/li&gt;
+&lt;li&gt;字符串解析部分,将通过&lt;code&gt;|&lt;/code&gt;来划分每个&lt;code&gt;Element&lt;/code&gt;字符串,然后每个字符串中再使用&lt;code&gt;;&lt;/code&gt;来划分具体的内容以及命令,命令采用&lt;code&gt;()&lt;/code&gt;包括的方式,如果是普通文本,不需要加命令语法&lt;/li&gt;
+&lt;li&gt;支持风格声明,即声明一个或多个样式,在这一条字符串中,都可以通过样式的变量名来引用样式,这样在一段字符串中,需要分割多处显示同一种样式的时候,减小字符串长度&lt;/li&gt;
+&lt;li&gt;颜色中&lt;code&gt;r&lt;/code&gt; &lt;code&gt;g&lt;/code&gt; &lt;code&gt;b&lt;/code&gt; &lt;code&gt;a&lt;/code&gt;都分别以一个字符来表示,从&lt;code&gt;0 ~ f&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;除了命令的语法部分,其他部分都能支持变量,变量采用&lt;code&gt;{{ }}&lt;/code&gt;的方式来声明,变量在代码中设置之后以替换为需要显示的数据&lt;/li&gt;
+&lt;li&gt;命令设计&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;(common)styleName; // 用于声明一段样式
+(l)styleName; // 用于引用一段样式, l-&amp;gt;link
+(s)20; // 用于声明一个字体大小, s-&amp;gt;size
+(c)ffff; // 用于声明一个颜色, c-&amp;gt;color
+(i)filename.png; // 用于声明一张图片, i-&amp;gt;image
+(f)family.ttf; // 用于声明使用的字体, f-&amp;gt;family
+{{param}} // 用于声明一个变量,以便在代码中修改
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;预期的使用情况就是:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 常规方式,表示创建两个文本和一个图片,第一个红色32号msg.ttf字体,第二个蓝色24号字体默认字体,第三创建avatar.jpg图片
+Hello World!;(s)32;(c)f00f(f)msg.ttf | I&apos;m Jenocn;(s)24;(c)00ff | (i)avatar.jpg
+// 样式在分割比较多并且不集中显示一种样式的情况下使用
+(common)style1;(c)ff0f;(s)20 | (common)style2;(s)22 | 1;(l)style1 | 2;(l)style2 | 3;(l)style1 | 4;(l)style2 | 5;(l)style1 | 6;(l)style2
+// 变量
+1.替换文本,代码中可以修改声明的 name 和 age 两个变量
+Hello {{name}}!;(s)20;(c)ff0f | [{{name}}: {{age}}];(s)18;(c)f85f
+2.结合样式使用,代码中通过修改 style 的变量为前面声明的变量,已达到变化
+(common)style1;(c)ff0f;(s)20 | (common);style2;(s)22 | Hello World!;(l){{style}}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;实现&lt;/h2&gt;
+&lt;p&gt;代码中使用必须要简单:
+需要一个&lt;code&gt;ParseRichTool&lt;/code&gt;类用于解析字符串&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 传入源字符串,解析并返回需要的数据
+std::vector&amp;lt;std::shared_ptr&amp;lt;ParseRichData&amp;gt;&amp;gt; Parse(const std::string&amp;amp; destStr);
+// 设置变量
+void SetParam(const std::string&amp;amp; key, const std::string&amp;amp; value);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;需要一个字符串工具,我自己实现了一个&lt;code&gt;StringToCocos&lt;/code&gt;类,包含了一些常用的字符串操作方法&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 该类中需要用到的方法
+// 替换字符串
+static std::string replace(const std::string&amp;amp; str, const std::string&amp;amp; find, const std::string&amp;amp; dest);
+// 切割字符串
+static std::vector&amp;lt;std::string&amp;gt; split(const std::string&amp;amp; str, char splitWord, bool bTrim = false);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;需要一个&lt;code&gt;ParseRichData&lt;/code&gt;结构体用于保存解析后的单个元素数据&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 基本的数据
+ParseRichType type{ ParseRichType::None }; // 类型
+std::string text; // 文本
+std::string family; // 字体
+cocos2d::Color4B color{ cocos2d::Color4B::WHITE }; // 颜色
+int fontSize{ 20 }; // 字体大小
+std::string filename; // 图片路径,只有当类型为图片时才有意义
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;需要一个&lt;code&gt;ParseRichType&lt;/code&gt;枚举用于区分类型和方便扩展&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;enum class ParseRichType
+{
+    None = 0,
+    Text,
+    Image,
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;具体实现其实就是字符串的切割和命令的解析,所以没什么需要详细讲的,贴一个段测试代码,直接copy到cocos中就可以看到效果&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;bool init()
+{
+    ParseRichTool tool;
+    tool.SetParam(&quot;name&quot;, &quot;Jenocn&quot;);
+    tool.SetParam(&quot;age&quot;, &quot;26&quot;);
+    tool.SetParam(&quot;style&quot;, &quot;style1&quot;);
+
+    auto func = [](const decltype(tool.Parse(&quot;&quot;))&amp;amp; data, int index)-&amp;gt;RichText* {
+        auto richText = RichText::create();
+        for (auto d : data)
+        {
+            if (d-&amp;gt;type == ParseRichType::Text)
+            {
+                auto element = RichElementText::create(0, Color3B(d-&amp;gt;color), d-&amp;gt;color.a, d-&amp;gt;text, d-&amp;gt;family, d-&amp;gt;fontSize);
+                richText-&amp;gt;pushBackElement(element);
+            }
+        }
+        richText-&amp;gt;setPosition(Vec2(500, index * 100));
+        return richText;
+    };
+
+    auto data1 = std::move(tool.Parse(&quot;Hello World!;(s)32;(c)f00f(f)msg.ttf | I&apos;m Jenocn;(s)24;(c)99ff | (i)avatar.jpg&quot;));
+    addChild(func(data1, 1), INT_MAX);
+    auto data2 = std::move(tool.Parse(&quot;(common)style1;(c)ff0f;(s)20 | (common)style2;(s)22 | 1;(l)style1 | 2;(l)style2 | 3;(l)style1 | 4;(l)style2 | 5;(l)style1 | 6;(l)style2&quot;));
+    addChild(func(data2, 2), INT_MAX);
+    auto data3 = std::move(tool.Parse(&quot;Hello {{name}}!;(s)20;(c)ff0f | [{{name}}: {{age}}];(s)18;(c)f85f&quot;));
+    addChild(func(data3, 3), INT_MAX);
+    auto data4 = std::move(tool.Parse(&quot;(common)style1;(c)ff0f;(s)20 | (common);style2;(s)22 | Hello World!;(l){{style}}&quot;));
+    addChild(func(data4, 4), INT_MAX);
+    return true;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;效果:
+&lt;img src=&quot;test.jpg&quot; alt=&quot;测试结果&quot; /&gt;&lt;/p&gt;
+&lt;h2&gt;源码&lt;/h2&gt;
+&lt;p&gt;源码下载地址&lt;br /&gt;
+&amp;lt;a href=&quot;https://pan.baidu.com/s/1ZuoQiDZHUIMfVFwLL03dTQ&quot; target=&quot;_blank&quot;&amp;gt;https://pan.baidu.com/s/1ZuoQiDZHUIMfVFwLL03dTQ&amp;lt;/a&amp;gt;&lt;br /&gt;
+提取码：x40a&lt;/p&gt;
+&lt;p&gt;这篇文章到这里就结束了,希望能够帮到大家,如有问题可以邮我,一起交流学习!&lt;/p&gt;
+</content:encoded></item><item><title>Webpack初始化</title><link>https://xmfrostless.github.io/posts/code/web/web-webpack/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/web/web-webpack/</guid><pubDate>Wed, 01 May 2019 16:52:15 GMT</pubDate><content:encoded>&lt;p&gt;引用官网对 webpack 的解释:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本质上，webpack 是一个现代 JavaScript 应用程序的静态模块打包器(module bundler)。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h3&gt;为什么要使用Webpack&lt;/h3&gt;
+&lt;p&gt;前端开发,有很多优秀的第三方库可以使用,使用&lt;code&gt;npm&lt;/code&gt;工具,轻松的下载并使用这些库,但是呢,直接&lt;code&gt;require&lt;/code&gt;这些库,在浏览器中是无法找到的,于是就需要这样一个工具,将&lt;code&gt;require&lt;/code&gt;引用到的库打包到一起,这样,我们的应用才可以被浏览器正确打开.&lt;/p&gt;
+&lt;p&gt;如果要使用&lt;code&gt;npm&lt;/code&gt;工具,就势必要使用&lt;code&gt;Webpack&lt;/code&gt;,我因为要使用&lt;code&gt;Electron&lt;/code&gt;和&lt;code&gt;Vue&lt;/code&gt;开发桌面应用,还有一些&lt;code&gt;node.js&lt;/code&gt;中很好用的方法,所以学习一下&lt;code&gt;Webpack&lt;/code&gt;,这里记录一下,以便后期回顾.&lt;/p&gt;
+&lt;h3&gt;Webpack初始化&lt;/h3&gt;
+&lt;h5&gt;获取&lt;code&gt;Webpack&lt;/code&gt;到工程&lt;/h5&gt;
+&lt;p&gt;假设你已经安装了&lt;code&gt;npm&lt;/code&gt;,使用命令:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;npm i webpack --save-dev
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;安装&lt;code&gt;webpack&lt;/code&gt;到开发环境下&lt;/p&gt;
+&lt;h5&gt;添加配置文件&lt;/h5&gt;
+&lt;p&gt;在根目录下新建文件,命名为&lt;code&gt;webpack.config.js&lt;/code&gt;,并写上&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;const path = require(&apos;path&apos;);
+module.exports = {
+    // 指定入口js文件
+    entry: {
+        index: &apos;./js/index.js&apos;
+    },
+    // 指定输出的js文件名和路径
+    output: {
+        filename: &apos;index.bundle.js&apos;,
+        path: path.resolve(__dirname, &apos;dist&apos;)
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;创建&lt;code&gt;js/index.js&lt;/code&gt;文件&lt;/p&gt;
+&lt;h5&gt;在&lt;code&gt;package.json&lt;/code&gt;中添加&lt;code&gt;build&lt;/code&gt;命令&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;&quot;scripts&quot;: {
+    &quot;build&quot;: &quot;webpack --config webpack.config.js&quot;
+  },
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后使用命令&lt;code&gt;npm run build&lt;/code&gt;就会看到工程目录下生成了一个&lt;code&gt;dist&lt;/code&gt;文件夹,里面有一个&lt;code&gt;index.bundle.js&lt;/code&gt;文件,这个就可以拿到html中去使用了&lt;/p&gt;
+&lt;p&gt;到这里,简单的配置就完毕了,下面结合&lt;code&gt;html&lt;/code&gt;和&lt;code&gt;vue&lt;/code&gt;来使用&lt;code&gt;webpack&lt;/code&gt;&lt;/p&gt;
+&lt;h5&gt;通过&lt;code&gt;npm&lt;/code&gt;安装&lt;code&gt;vue&lt;/code&gt;&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;npm i vue --save
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;新建&lt;code&gt;index.html&lt;/code&gt;文件&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;html lang=&quot;en&quot;&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;meta charset=&quot;UTF-8&quot;&amp;gt;
+    &amp;lt;title&amp;gt;Document&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+    &amp;lt;div id=&quot;app&quot;&amp;gt;
+        &amp;lt;p&amp;gt;{{ message }}&amp;lt;/p&amp;gt;
+    &amp;lt;/div&amp;gt;
+    &amp;lt;script src=&quot;./dist/index.bundle.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这个页面中使用了Vue的语法&lt;code&gt;{{ message }}&lt;/code&gt;
+然后引用的是&lt;code&gt;webpack&lt;/code&gt;导出的&lt;code&gt;index.bundle.js&lt;/code&gt;文件&lt;/p&gt;
+&lt;h5&gt;在&lt;code&gt;js/index.js&lt;/code&gt;中写入&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;import Vue from &apos;vue&apos;;
+
+new Vue({
+    el: &apos;#app&apos;,
+    data: {
+      message: &apos;Hello World!&apos;,
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;创建vue实例,然后初始&lt;code&gt;message&lt;/code&gt;为&quot;Hello World!&quot;&lt;/p&gt;
+&lt;h5&gt;在&lt;code&gt;webpack&lt;/code&gt;中配置vue&lt;/h5&gt;
+&lt;p&gt;在&lt;code&gt;webpack.config.js&lt;/code&gt;中添加配置:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;module.exports = {
+    entry: {
+        index: &apos;./js/index.js&apos;
+    },
+    output: {
+        filename: &apos;index.bundle.js&apos;,
+        path: path.resolve(__dirname, &apos;dist&apos;)
+    },
+    // 新增加的
+    resolve: {
+        alias: { &apos;vue&apos;: &apos;vue/dist/vue.js&apos; }
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后执行&lt;code&gt;npm run build&lt;/code&gt;,在dis目录下重新生成&lt;code&gt;index.bundle.js&lt;/code&gt;,打开&lt;code&gt;index.html&lt;/code&gt;就可以看到vue生效了&lt;/p&gt;
+&lt;h5&gt;开启调试(定位错误到源代码位置)&lt;/h5&gt;
+&lt;p&gt;因为上面html中使用的是导出的js文件,这样当出现错误的时候,很难找到错误的位置,所以开启调试,通过source-map定位错误的位置,下面有两种做法&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;内联的方式
+直接在webpack的配置文件&lt;code&gt;webpack.config.js&lt;/code&gt;中,添加新的属性&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;module.exports = {
+    entry: {
+        index: &apos;./js/index.js&apos;
+    },
+    output: {
+        filename: &apos;index.bundle.js&apos;,
+        path: path.resolve(__dirname, &apos;dist&apos;)
+    },
+    resolve: {
+        alias: { &apos;vue&apos;: &apos;vue/dist/vue.js&apos; }
+    },
+    // 新添加的
+    devtool: &apos;inline-source-map&apos;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这样就可以了,当出现错误的时候,在浏览器调试界面的控制台中就可以看到具体出错的位置了
+这种方式其实是把数据都写入了&lt;code&gt;index.bundle.js&lt;/code&gt;中&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;生成.map文件的方式
+就是将&lt;code&gt;devtool: &apos;inline-source-map&apos;&lt;/code&gt;改为&lt;code&gt;devtool: &apos;source-map&apos;&lt;/code&gt;就可以了,这样会在输出的文件目录下,生成一个同名的.map文件. 在出错的时候,也是可以看到出错位置的
+这种方式可以看到&lt;code&gt;index.bundle.js&lt;/code&gt;文件容量小了很多,一般推荐这种方式&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;总之,调试信息在正式发布的时候一般是不使用的.&lt;/p&gt;
+&lt;h5&gt;再增加一个vue实例&lt;/h5&gt;
+&lt;p&gt;情况稍微复杂一点了,新增了一个js文件,命名为&lt;code&gt;component.js&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import Vue from &apos;vue&apos;;
+new Vue({
+    el: &apos;#component&apos;,
+    data: {
+      message: &apos;Hello Component!&apos;,
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;相应的,在html中新增:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;div id=&quot;component&quot;&amp;gt;
+    &amp;lt;p&amp;gt;{{ message }}&amp;lt;/p&amp;gt;
+&amp;lt;/div&amp;gt;
+&amp;lt;script src=&quot;./dist/component.bundle.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后在配置中配置新的js入口和输出&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;module.exports = {
+    entry: {
+        index: &apos;./js/index.js&apos;,
+        // 新添加的
+        component: &apos;./js/component.js&apos;,
+    },
+    devtool: &apos;source-map&apos;,
+    output: {
+        // 这里通过入口的属性name来分别命名
+        filename: &apos;[name].bundle.js&apos;,
+        path: path.resolve(__dirname, &apos;dist&apos;)
+    },
+    resolve: {
+        alias: { &apos;vue&apos;: &apos;vue/dist/vue.js&apos; }
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后执行命令&lt;code&gt;npm run build&lt;/code&gt;可以看到dist下面导出的文件,直接打开html可以看到效果.&lt;/p&gt;
+&lt;h5&gt;解决公共依赖&lt;/h5&gt;
+&lt;p&gt;上面两个js文件中都&lt;code&gt;import Vue from &apos;vue&apos;&lt;/code&gt;,这样导出的两个&lt;code&gt;bundle.js&lt;/code&gt;文件中都各自包含了一份vue的js代码,这样无疑是重复了,使得容量非常大,在&lt;code&gt;webpack&lt;/code&gt;中增加一个配置,就可以解决这个问题.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;webpack.config.js&lt;/code&gt;中:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;module.exports = {
+    entry: {
+        index: &apos;./js/index.js&apos;,
+        component: &apos;./js/component.js&apos;,
+    },
+    devtool: &apos;source-map&apos;,
+    output: {
+        filename: &apos;[name].bundle.js&apos;,
+        path: path.resolve(__dirname, &apos;dist&apos;)
+    },
+    resolve: {
+        alias: { &apos;vue&apos;: &apos;vue/dist/vue.js&apos; }
+    },
+    // 新添加的
+    optimization: {
+        splitChunks: {
+            // 表示公共依赖导出到&apos;common.bundle.js&apos;中
+            name: &apos;common&apos;,
+            // 将所有公共部分导出到一处
+            chunks: &apos;all&apos;
+        }
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后在执行&lt;code&gt;npm run build&lt;/code&gt;查看&lt;code&gt;dist&lt;/code&gt;下的文件,多了一个&lt;code&gt;common.bundle.js&lt;/code&gt;并且另外两个js文件的容量小了很多&lt;/p&gt;
+&lt;h3&gt;最后&lt;/h3&gt;
+&lt;p&gt;本文就到这里了,目前呢,基本上是满足我的需求了,webpack还有很多功能,比如导出资源,还有很多插件,都是提高开发效率的,待以后慢慢深入!本文呢作为一个记录和入门,一方面自己以后可以回头看看,另一方面希望能够帮到正在学习的朋友.&lt;/p&gt;
+</content:encoded></item><item><title>Vue简单使用</title><link>https://xmfrostless.github.io/posts/code/web/web-vue/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/web/web-vue/</guid><pubDate>Tue, 30 Apr 2019 11:17:47 GMT</pubDate><content:encoded>&lt;p&gt;最近在看前端,然后理所当然的接触到了目前最流行的Vue,Vue超棒的!&lt;/p&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;我对Vue的理解&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://cn.vuejs.org/&quot;&gt;Vue.js&lt;/a&gt; 是国人大神尤雨溪开发的前端框架,使用Vue能够轻松与Html进行交互,这样就能更方便的创建我们想要的界面和效果&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;能够通过绑定名称直接获取dom元素&lt;/li&gt;
+&lt;li&gt;能够直接将属性与value进行绑定,且当属性值发生变化时value对应的视图也会立即更新&lt;/li&gt;
+&lt;li&gt;dom属性支持条件和循环语句,这样能做到很多效果,显示或者隐藏,根据数组动态创建列表等等,简直不要太棒&lt;/li&gt;
+&lt;li&gt;button按钮绑定回调函数&lt;/li&gt;
+&lt;li&gt;组件式开发html页面,使得页面模块化,可复用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;使用Vue&lt;/h2&gt;
+&lt;h5&gt;在页面中引入Vue&lt;/h5&gt;
+&lt;p&gt;最简单的方法就是直接引用&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;script src=&quot;https://cdn.jsdelivr.net/npm/vue/dist/vue.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;或者下载下来,放到js目录下 &lt;a href=&quot;https://vuejs.org/js/vue.min.js&quot;&gt;Vue.js 右键另存为&lt;/a&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;script src=&quot;./js/vue.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;Hello World&lt;/h5&gt;
+&lt;p&gt;新建一个&lt;code&gt;index.html&lt;/code&gt;文件,引入Vue,写一个&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;标签,标签内容为&lt;code&gt;{{ text }}&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;meta charset=&quot;UTF-8&quot;&amp;gt;
+    &amp;lt;title&amp;gt;Document&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+&amp;lt;div id=&quot;first&quot;&amp;gt;
+    &amp;lt;p&amp;gt;{{ text }}&amp;lt;/p&amp;gt;
+&amp;lt;/div&amp;gt;
+&amp;lt;/body&amp;gt;
+&amp;lt;script src=&quot;https://cdn.jsdelivr.net/npm/vue/dist/vue.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&amp;lt;script&amp;gt;
+    // 创建一个vue实例
+    var vm = new Vue({
+        el: &quot;#first&quot;, // 指定实例从id=first的范围内创建
+        data: { // data下是{{}}声明的变量
+            text: &quot;Hello World&quot; // 给这个变量赋初值
+        }
+    });
+    // vm.text = &quot;Change Text&quot;; // 这里就可以通过vm.text获取到刚刚定义的变量
+&amp;lt;/script&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;输出结果:&lt;br /&gt;
+&amp;lt;p&amp;gt;Hello World&amp;lt;/p&amp;gt;&lt;/p&gt;
+&lt;h5&gt;input 双向绑定,获取输入的文本&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;v-model&lt;/code&gt;用于将变量与内容绑定,在刚刚HelloWorld程序的基础上,在&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;下面新增一行代码,创建一个&lt;code&gt;&amp;lt;input&amp;gt;&lt;/code&gt;,变量名仍然使用&lt;code&gt;text&lt;/code&gt;,其他地方都无需改动&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;div id=&quot;first&quot;&amp;gt;
+    &amp;lt;p id&amp;gt;{{ text }}&amp;lt;/p&amp;gt;
+    &amp;lt;input v-model=&quot;text&quot;&amp;gt;
+&amp;lt;/div&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;现在在输入框里输入内容就会立即改变&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;标签的内容,并且通过&lt;code&gt;vm.text&lt;/code&gt;可以获取到当前文本&lt;/p&gt;
+&lt;h5&gt;条件语句&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;v-if&lt;/code&gt;用于根据其值来决定当前元素是否显示,值可以是一个表达式或者变量,在上面的&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;标签中加入&lt;code&gt;v-if=&quot;text != &apos;&apos;&quot;&lt;/code&gt;表示当&lt;code&gt;text&lt;/code&gt;为空的时候不显示&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;p v-if=&quot;text != &apos;&apos;&quot;&amp;gt;{{ text }}&amp;lt;/p&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h5&gt;循环语句&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;v-for&lt;/code&gt;用于根据其值来决定当前元素创建多少个,值的写法为&lt;code&gt;item in items&lt;/code&gt;,表示在items中遍历并返回item,&lt;code&gt;items&lt;/code&gt;即为声明的数组,依然在上面的基础上修改,在&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;标签中加入&lt;code&gt; v-for=&quot;item in items&quot;&lt;/code&gt;,在vue的&lt;code&gt;data&lt;/code&gt;中添加&lt;code&gt;items: [1, 2, 3]&lt;/code&gt;表示数组items并初始化3个数值为&lt;code&gt;1,2,3&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;p v-if=&quot;text != &apos;&apos;&quot; v-for=&quot;item in items&quot;&amp;gt;{{ item }}: {{ text }}&amp;lt;/p&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;var vm = new Vue({
+    el: &quot;#first&quot;,
+    data: {
+        text: &quot;Hello World&quot;,
+        items: [1, 2, 3] // items数组
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;结果将会输出3个&lt;code&gt;&amp;lt;p&amp;gt;&lt;/code&gt;元素&lt;/p&gt;
+&lt;h5&gt;按钮点击事件&lt;/h5&gt;
+&lt;p&gt;&lt;code&gt;v-on:click&lt;/code&gt;用于绑定一个函数,当被绑定的元素点击的时候会触发,在上面的代码基础上,新增一个按钮&lt;code&gt;&amp;lt;button&amp;gt;&lt;/code&gt;并添加&lt;code&gt;v-on:click=&quot;OnShow()&quot;&lt;/code&gt;,在Vue中新增&lt;code&gt;methods:&lt;/code&gt;并在其下实现&lt;code&gt;OnShow()&lt;/code&gt;方法&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;button v-on:click=&quot;OnShow()&quot;&amp;gt;弹出&amp;lt;/button&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;var vm = new Vue({
+    el: &quot;#first&quot;,
+    data: {
+        text: &quot;Hello World&quot;,
+        items: [1, 2, 3]
+    },
+    methods: { // 方法都在这个methods下面
+        OnShow: function() { // 实现OnShow方法
+            alert(this.text); // 弹出当前的文本
+        }
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;当点击按钮的时候将会弹出对话框,并显示当前input中的文本&lt;/p&gt;
+&lt;h5&gt;完整代码&lt;/h5&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+    &amp;lt;meta charset=&quot;UTF-8&quot;&amp;gt;
+    &amp;lt;title&amp;gt;Document&amp;lt;/title&amp;gt;
+&amp;lt;/head&amp;gt;
+&amp;lt;body&amp;gt;
+&amp;lt;div id=&quot;first&quot;&amp;gt;
+    &amp;lt;p v-if=&quot;text != &apos;&apos;&quot; v-for=&quot;item in items&quot;&amp;gt;{{ item }}: {{ text }}&amp;lt;/p&amp;gt;
+    &amp;lt;input v-model=&quot;text&quot;&amp;gt;
+    &amp;lt;button v-on:click=&quot;OnShow()&quot;&amp;gt;弹出&amp;lt;/button&amp;gt;
+&amp;lt;/div&amp;gt;
+&amp;lt;/body&amp;gt;
+&amp;lt;script src=&quot;https://cdn.jsdelivr.net/npm/vue/dist/vue.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&amp;lt;script&amp;gt;
+    var vm = new Vue({
+        el: &quot;#first&quot;,
+        data: {
+            text: &quot;Hello World&quot;,
+            items: [1, 2, 3]
+        },
+        methods: {
+            OnShow: function() {
+                alert(this.text);
+            }
+        }
+    });
+&amp;lt;/script&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;最后&lt;/h2&gt;
+&lt;p&gt;以上是最简单常用的语法,Vue很强大,还有很多更高级的用法还在学习中.如有问题可以一起讨论学习!&lt;/p&gt;
+</content:encoded></item><item><title>进阶版消息机制实现</title><link>https://xmfrostless.github.io/posts/code/pattern/messagecenter/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/pattern/messagecenter/</guid><description>如何实现一个自动定义消息ID,按需派发消息,强类型,支持消息队列,内存安全的消息中枢系统</description><pubDate>Wed, 24 Apr 2019 11:27:45 GMT</pubDate><content:encoded>&lt;p&gt;&lt;strong&gt;实现一个自动定义消息ID,按需派发消息,强类型,支持消息队列，内存安全的消息中枢系统&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;本文将从以下几点讲解：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;实现自定义消息ID&lt;/li&gt;
+&lt;li&gt;实现按需派发消息&lt;/li&gt;
+&lt;li&gt;实现强类型&lt;/li&gt;
+&lt;li&gt;实现消息队列&lt;/li&gt;
+&lt;li&gt;实现内存安全&lt;/li&gt;
+&lt;li&gt;完善消息队列&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;实现自定义消息ID&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;使消息的管理更方便,开发时只需要关注具体的消息即可&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在上一篇的简单消息机制里,每定义一个新的消息,都要定义一个与之匹配的ID用来辨认是哪个消息,我见过的很多项目中也是如此,这样就会使我们多维护一个消息ID,即我们需要维护一个消息ID列表和一个具体消息数据的集合,这使得收发消息都不那么方便,代码也不那么优雅.那么现在就来实现一个自定义消息ID吧,将ID与类绑定,并且自增长,不需要人工去定义它.&lt;/p&gt;
+&lt;p&gt;这里结合模板来实现这个功能&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 计数器, T表示当前计数器的归属
+template&amp;lt;typename T&amp;gt;
+class ClassTypeCounter final
+{
+public:
+    // 一个static的int变量用于保存数量
+    static int _count;
+    // 一个成员变量,用于标记自己的位置
+    int _index{ 0 };
+public:
+    // 每当实例化一个该对象,_index保留当前计数,然后计数器加1
+    ClassTypeCounter()
+    {
+        _index = _count;
+        ++_count;
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;/**
+* 一个模板的ClassType基类(叫ClassType是因为ID这个说法在子类中可能会被用到,所以改成ClassType区分)
+* TClass:需要计数的类
+* TCounter:计数器的归属
+*/
+template&amp;lt;typename TClass, typename TCounter&amp;gt;
+class ClassType
+{
+private:
+    /**
+    * 一个具体的计数器
+    * 这样每产生一个新的TClass,都会产生一个ClassTypeCounter&amp;lt;TCounter&amp;gt;的具体对象,从而实现id增长
+    */
+    static ClassTypeCounter&amp;lt;TCounter&amp;gt; __counter;
+public:
+    // 获取自己的ClassType
+    static int GetClassType() { return __counter._index; }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;有了上面两个模板,自定义消息就OK啦,下面看怎么用&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/**
+* 消息基类,上篇中讲过的
+* 这里改成模板了,需要一个类来作为消息的计数器归属,这里用一个IMessage
+* 嗯? 为什么加了个IMessage,后面说,这里先加上
+*/
+template&amp;lt;typename T&amp;gt;
+class MessageBase : public ClassType&amp;lt;T, IMessage&amp;gt;
+{
+public:
+    // 这里需要实现一下IMessage里的接口
+    virtual int GetMessageID() const
+    {
+        // 因为有了ClassType计数器了,哈哈,是不是很方便
+        return MessageBase&amp;lt;T&amp;gt;::GetClassType();
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// IMessage需要定义一下
+class IMessage {
+public:
+    virtual ~IMessage() {}
+    // 这里需要这个接口,来给实例调用
+    virtual int GetMessageID() const = 0;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;具体的使用就像这样,跟之前使用一样哦,就是继承时多传个类型,把自己传过去,记一下数:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class MyMessage : public Message&amp;lt;MyMessage&amp;gt;
+{
+    // some parameters...
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后那个MessageType的枚举就可以干掉了,改成这样使用&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;int main()
+{
+    MessageCenter::AddListener(&quot;listener&quot;, [](IMessage* message){
+        if (message-&amp;gt;GetMessageID() == MyMessage::GetClassType())
+        {
+            // todo...
+        }
+    });
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;到这里,自定义ID就已经完成啦.&lt;/p&gt;
+&lt;h2&gt;实现按需派发消息&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;监听者只监听自己关心的消息&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;监听消息时不用再判断消息是不是自己想要的,提高效率,代码也好看&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;按需派发消息的好处是很多的,一个监听者只负责监听一个消息,没有自己的消息时就不回调,这样使得大型开发中使用消息也能管理的井井有条,功能开发模块化,需要监听就添加,不需要就删除&lt;/p&gt;
+&lt;p&gt;有了上面的自定义消息ID,这个就很简单了,但是呢,这里先说简单的思路,但不具体实现,后面强类型那里再具体实现,为什么这样做呢,是因为结合强类型,可以不用单独去关心ID,只关心具体的消息就行了&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 简单做法就是添加监听者的时候给一个ID参数
+// 在Send消息的时候判断一下messageID是不是与Message的GetClassType()相同就行了
+static void AddListener(const std::string&amp;amp; name, int messageID, std::function&amp;lt;void(IMessage*)&amp;gt; func);
+// 使用时就这样,但是这样无疑增加了一个不必要的参数,后面结合强类型来实现
+MessageCenter::AddListener(&quot;Listener&quot;, MyMessage::GetClassType(), [](IMessage* message){ });
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 还有一个方法就是使用模板
+template&amp;lt;typename T&amp;gt;
+static void AddListener(const std::string&amp;amp; name, std::function&amp;lt;void(IMessage*)&amp;gt; func) {
+    // T::GetClassType();就可以获取到这个消息的ID了,这也体现了自定义ID的好处,减少参数是好的
+}
+// 这样调用的时候就是
+MessageCenter::AddListener&amp;lt;MyMessage&amp;gt;(&quot;Listener&quot;, [](IMessage* message){ });
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;按需派发消息就先到这里了.&lt;/p&gt;
+&lt;h2&gt;实现强类型&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;省去了类型的转换&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;更安全,具体逻辑不再需要转换类型&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;即拿即用,很方便&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;强类型就是指,消息在接收时,能够保持消息原本的类型,而不是一个基类类型.这样做的好处就是接收到的消息不用转换,编译器会强制你使用正确的类型,提高了代码的健壮性,用起来也很舒服&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 需要一个MessageListener&amp;lt;T&amp;gt;类来保存类型
+// 这里需要一个IMessageListener,是因为MessageCenter需要统一保存所有Listener
+template&amp;lt;typename T&amp;gt;
+class MessageListener : public IMessageListener
+{
+public:
+    MessageListener(std::function&amp;lt;void(T*)&amp;gt; func)
+        : _func(func)
+    {}
+public:
+    // 提供给MessageCenter调用
+    virtual void Invoke(IMessage* message)
+    {
+        // 因为有类型,所以可以转换啦
+        // 然后因为是按需派发,所以这里的message就是T*类型
+        _func(static_cast&amp;lt;T*&amp;gt;(message));
+    }
+
+    // 返回一下ID,这是实现自IMessageListener的,MessageCenter需要用
+    virtual int GetMessageID() const
+    {
+        return T::GetMessageID();
+    }
+private:
+    std::function&amp;lt;void(T*)&amp;gt; _func;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// IMessageListener
+class IMessageListener
+{
+public:
+    virtual ~IMessageListener() {}
+    virtual void Invoke(IMessage* message) = 0;
+    virtual int GetMessageID() const = 0;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;MessageListener在实际使用时是不需要关心的&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// MessageCenter这边的处理以及按需派发的实现  
+// 这里只贴关键代码,全部源码请在文章最后查看
+// MessageCenter类
+class MessageCenter
+{
+public:
+    // 使用模板,还有function里面的参数也使用的T
+    template&amp;lt;typename T&amp;gt;
+    static void AddListener(const std::string&amp;amp; name, std::function&amp;lt;void(T*)&amp;gt; func)
+    {
+        // ... 此处省略参数有效性的判断
+        // 关键代码一行
+        IMessage* listener = new MessageListener&amp;lt;T&amp;gt;(func);
+        // 添加到监听器集合
+        _listenerMap.emplace(name, listener);
+    }
+
+    // 派发消息,按需派发
+    static void Send(IMessage* message)
+    {
+        if (!message) { return; }
+        // 遍历监听者
+        for (auto&amp;amp; pair : _listenerMap)
+        {
+            auto listener = pair.second;
+            // 判断消息ID是否一致,如果是则回调
+            if (message-&amp;gt;GetMessageID() == listener-&amp;gt;GetMessageID())
+            {
+                listener-&amp;gt;Invoke(message);
+            }
+        }
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 调用方式
+MessageCenter::AddListener&amp;lt;MyMessage&amp;gt;(&quot;Listener&quot;, [](MyMessage* message){
+    // message-&amp;gt;param1; 就可以直接拿到属性了
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;到这里,按需派发和强类型就搞定啦.&lt;/p&gt;
+&lt;h2&gt;实现消息队列&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;先将消息入队,当调用派发的时候,再统一发送&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;游戏开发时,可以在下一帧发送消息,好处坏处都有,看需要&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;消息队列可以先Push消息,然后在合适的时机再Dispatch派发消息,因为不是立即调用,好处和坏处并存,看需要&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// MessageCenter类
+// 定义一个消息队列
+std::list&amp;lt;IMessage*&amp;gt; _messageQueue;
+// 增加一个Push方法
+static void Push(IMessage* message)
+{
+    if (!message) { return; }
+    // 首先这里会有内存隐患,后面内存安全部分讲解如何处理
+    // 隐患:你不知道message是一个动态创建的对象还是一个局部变量的地址
+    _messageQueue.emplace_back(message);
+}
+// 增加一个OnDispatch方法
+static void OnDispatch()
+{
+    for (auto message : _messageQueue)
+    {
+        Send(message);
+        // 安全隐患
+        delete message;
+    }
+    _messageQueue.clear();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;很多项目的做法是拷贝一个消息,但是我不建议这样做,而且无法做到完美深拷贝,而且使用的过程可能还会出很多问题,性能也会大打折扣,所以后面的安全部分讲解如何使用更好的方法解决&lt;/p&gt;
+&lt;h2&gt;内存安全&lt;/h2&gt;
+&lt;p&gt;C++开发的其中一个难点就是需要管理内存,当你开发一个通用工具时,最重要的就是它是安全可靠的,这样才用的放心,消息机制是需要被大量使用的,一个好的消息机制不应该在使用时来管理内存,这里的实现借助于std::shared_ptr&lt;/p&gt;
+&lt;p&gt;std::shared_ptr内部基于引用计数,重写了拷贝构造,在拷贝时就会增加引用,std::shared_ptr销毁时就会减少引用&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// MessageBase中
+// 使用一个名称表示std::shared_ptr&amp;lt;IMessage&amp;gt;
+using MessagePtr = std::shared_ptr&amp;lt;IMessage&amp;gt;;
+// MessageBase增加方法,这样可以简化创建std::shared_ptr&amp;lt;T&amp;gt;
+static std::shared_ptr&amp;lt;T&amp;gt; Create()
+{
+        return std::shared_ptr&amp;lt;T&amp;gt;(new T());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// MessageCenter中
+// 消息队列
+static std::list&amp;lt;MessagePtr&amp;gt; _messageQueue;
+// 派发消息
+static void Send(MessagePtr message);
+static void Push(MessagePtr message);
+// 添加监听者
+template&amp;lt;typename T&amp;gt;
+static void AddListener(const std::string&amp;amp; name, std::function&amp;lt;void(std::shared_ptr&amp;lt;T&amp;gt; message)&amp;gt; func);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// MessageListener
+// _func需要保留类型,使用std::shared_ptr&amp;lt;T&amp;gt;
+std::function&amp;lt;void(std::shared_ptr&amp;lt;T&amp;gt;)&amp;gt; _func;
+// 参数使用 MessagePtr
+virtual void Invoke(MessagePtr message)
+{
+    // 这里使用std::static_pointer_cast&amp;lt;T&amp;gt;
+    // 将std::shared_ptr&amp;lt;IMessage&amp;gt;转换为std::shared_ptr&amp;lt;T&amp;gt;
+    _func(std::static_pointer_cast&amp;lt;T&amp;gt;(message));
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;具体的代码可以看文章最后附带的源码&lt;/p&gt;
+&lt;h1&gt;完善消息队列&lt;/h1&gt;
+&lt;p&gt;处理完安全隐患之后,可以把注意力再回到消息队列,在OnDispatch回调时继续Push消息会出现问题,因为在遍历一个列表时不建议往里面添加新的元素,虽然有一些其他的解决方法,这里我使用双缓冲的方法&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 需要两个消息队列
+// 一个true标记的队列,一个false标记的队列
+static std::map&amp;lt;bool, std::list&amp;lt;MessagePtr&amp;gt;&amp;gt; _messageQueue;
+// 用于标记当前活跃的队列
+static bool _activeQueueSign;
+// 私有方法,获取活跃队列
+static std::list&amp;lt;MessagePtr&amp;gt;&amp;amp; _GetActiveQueue();
+// 私有方法,获取闲置队列
+static std::list&amp;lt;MessagePtr&amp;gt;&amp;amp; _GetIdleQueue();
+// OnDispatch
+void OnDispatch()
+{
+    // 切换标记
+    _activeQueueSign = !_activeQueueSign;
+    // 从活跃队列中派发消息
+    for (auto message : _GetActiveQueue())
+    {
+        Send(message);
+    }
+    _GetActiveQueue().clear();
+}
+// 添加到闲置队列中
+void Push(MessagePtr message)
+{
+    if (!message) { return; }
+    _GetIdleQueue().emplace_back(message);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;使用方法&lt;/h2&gt;
+&lt;p&gt;新建一个MessageDefine.h文件,存放所有消息&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// MessageDefine.h 
+
+// 包含MessageCenter.h头文件即可
+#include &quot;MessageCenter.h&quot;
+
+// 新增一个具体消息
+class MyMessage : public MessageBase&amp;lt;MyMessage&amp;gt;
+{
+public:
+    // some parameters
+    int value1;
+    float value2;
+    std::string value3;
+    // ...
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;使用的地方&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// main.cpp
+
+// 包含你自己的消息头文件
+#include &quot;MessageDefine.h&quot;
+
+void main()
+{
+    // 监听
+    MessageCenter::AddListener&amp;lt;MyMessage&amp;gt;(&quot;main&quot;, [](std::shared_ptr&amp;lt;MyMessage&amp;gt; msg){
+        // todo...
+    });
+
+    // 创建一个消息
+    auto message = MyMessage::Create();
+    // 赋值
+    message-&amp;gt;value1 = 1;
+    message-&amp;gt;value2 = 3.14f;
+    message-&amp;gt;value3 = &quot;Hello&quot;:
+    // 发送
+    MessageCenter::Send(message);
+    /**
+    // 入队
+    MessageCenter::Push(message);
+    // 派发
+    MessageCenter::OnDispatch();
+    */
+
+    // 删除监听
+    MessageCenter::RemoveListener(&quot;main&quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这篇文章到这里就结束啦,至此,整个消息机制也告一段落啦,希望看过之后对你能有帮助,如有问题可以邮我,一起交流学习!&lt;/p&gt;
+</content:encoded></item><item><title>消息机制</title><link>https://xmfrostless.github.io/posts/code/pattern/message/</link><guid isPermaLink="true">https://xmfrostless.github.io/posts/code/pattern/message/</guid><description>正确使用消息,能够降低代码耦合,提高代码可维护性</description><pubDate>Mon, 22 Apr 2019 22:16:36 GMT</pubDate><content:encoded>&lt;p&gt;本文将从以下几点去讲解&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;介绍消息机制&lt;/li&gt;
+&lt;li&gt;缺点和优点&lt;/li&gt;
+&lt;li&gt;推荐一些使用场合&lt;/li&gt;
+&lt;li&gt;实现一个轻量版本的消息机制(C++)&lt;/li&gt;
+&lt;li&gt;附源码&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&amp;lt;!-- more --&amp;gt;&lt;/p&gt;
+&lt;h2&gt;介绍消息机制&lt;/h2&gt;
+&lt;p&gt;开门见山,消息机制,就是处理代码之间的通信问题.当一个模块需要调用另一个模块时,就可以使用消息机制,发送一个消息,告诉另一个模块,该工作了.消息机制的使用非常广泛,很多地方都有使用&lt;/p&gt;
+&lt;h2&gt;缺点和优点&lt;/h2&gt;
+&lt;h3&gt;缺点&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;不太容易掌握使用的时机&lt;/li&gt;
+&lt;li&gt;代码中会定义很多消息,都需要管理&lt;/li&gt;
+&lt;li&gt;可能会出现消息循环调用导致的问题&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;优点&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;降低耦合&lt;/li&gt;
+&lt;li&gt;从而提高代码安全性&lt;/li&gt;
+&lt;li&gt;提高代码的可维护性&lt;/li&gt;
+&lt;li&gt;有利于后续代码的迭代.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;推荐一些使用场合&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;最经典的使用场合就是数据层向UI层发送消息,即当数据发生变化时,通知UI更新显示&lt;/li&gt;
+&lt;li&gt;游戏开发中,对象与对象之间的调用,你是否有时候因为获取游戏对象而感到繁琐和麻烦,使用消息机制,发个消息,它自己做&lt;/li&gt;
+&lt;li&gt;游戏中类似成就的功能需要根据多个模块的功能来判断是否达成,这就造成了成就功能与多个模块产生依赖,使用消息机制是再好不过了&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;可以使用消息机制的地方还有很多,那么在什么情况下使用消息机制合适呢?&lt;br /&gt;
+&lt;code&gt;当你需要调用另一个模块的功能时,另一个模块不一定会存在的情况下或者你无法优雅的获取对方的实例时&lt;/code&gt;,就是使用消息机制最佳的场合.总之消息机制主要解决的就是耦合的问题,两个不想关的模块之间需要互相调用也都可以使用&lt;/p&gt;
+&lt;h2&gt;实现一个轻量版本的消息机制(C++)&lt;/h2&gt;
+&lt;p&gt;这里先实现一个轻量的版本,主要是通俗易懂,且可以直接使用,后面再写一篇进阶版本 &lt;em&gt;&lt;strong&gt;(进阶版本带强类型消息,自动定义消息ID,按需派发消息,消息队列,内存管理等)&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;轻量版本,需要一个消息类,一个消息管理类&lt;/p&gt;
+&lt;h3&gt;消息基类&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;class MessageBase
+{
+public:
+    virtual ~MessageBase() {}
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;管理消息的中枢系统,负责消息的派发以及管理监听消息的监听者,一般情况下,这个类作为单例比较合适(单例本身就是全局对象,所以直接使用static方法)&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;// MessageCenter.h
+// 消息中枢用于派发消息和管理监听者
+class MessageCenter
+{
+public:
+    /**
+    * 添加监听者
+    * 参数1:监听者的名字,用来定位这个监听者
+    * 参数2:收到消息时触发的回调函数
+    */
+    static void AddListener(const std::string&amp;amp; name, std::function&amp;lt;void(int messageID, MessageBase* message)&amp;gt; func);
+    /**
+    * 删除监听者
+    * 参数:通过name删除已存在的监听者
+    */
+    static void RemoveListener(const std::string&amp;amp; name);
+    /**
+    * 发送消息
+    * 参数1:给这个消息指定一个ID
+    * 参数2:具体的消息
+    */
+    static void Send(int messageID, MessageBase* message);
+private:
+    /**
+    存放所有的监听者
+    */
+    static std::map&amp;lt;std::string, std::function&amp;lt;void(int messageID, MessageBase*)&amp;gt;&amp;gt; _listenerMap;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// MessageCenter.cpp
+void MessageCenter::AddListener(const std::string&amp;amp; name, std::function&amp;lt;void(int, MessageBase*)&amp;gt; func)
+{
+    // 确保参数的可靠性
+    if (func == nullptr) { return; }
+    auto ite = _listenerMap.find(name);
+    if (ite != _listenerMap.end()) { return; }
+    _listenerMap.emplace(name, func);
+}
+void MessageCenter::RemoveListener(const std::string&amp;amp; name)
+{
+    auto ite = _listenerMap.find(name);
+    if (ite == _listenerMap.end()) { return; }
+    _listenerMap.erase(ite);
+}
+void MessageCenter::Send(int messageID, MessageBase* message)
+{
+    // 回调所有的监听者函数
+    for (auto&amp;amp; pair : _listenerMap)
+    {
+        pair.second(messageID, message);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;具体调用的实例&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;// MessageDefine.h
+// 消息ID
+enum class MessageID {
+    None = 0,
+    MyMessage,
+};
+// 具体的消息类
+class MyMessage : public MessageBase
+{
+public:
+    // 一些参数
+    std::string param1;
+    int param2;
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;// 这里简单做一个测试,就将监听和派发放在main中处理了,实际上,监听和派发可以在任意处
+// main.cpp
+void main()
+{
+    // 添加一个监听者
+    MessageCenter.AddListener(&quot;Listener&quot;, (int id, MessageBase* message) {
+        if (id == (int)MessageID.MyMessage)
+        {
+            auto msg = static_cast&amp;lt;MyMessage*&amp;gt;(message);
+            std::cout &amp;lt;&amp;lt; msg-&amp;gt;param1 &amp;lt;&amp;lt; &quot;:&quot; &amp;lt;&amp;lt; msg-&amp;gt;param2 &amp;lt;&amp;lt; std::endl;
+        }
+    });
+
+    // 发送消息
+    MyMessage msg;
+    msg.param1 = &quot;Hello&quot;;
+    msg.param2 = 1001;
+    MessageCenter.send(MessageID.MyMessage, &amp;amp;msg);
+
+    // 删除监听者
+    MessageCenter.RemoveListener(&quot;Listener&quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;附源码&lt;/h2&gt;
+&lt;p&gt;源码中模拟了一个经典使用场景(Data-View)&lt;br /&gt;
+源码下载地址&lt;br /&gt;
+&amp;lt;a href=&quot;https://pan.baidu.com/s/1NeOo5VnNjwzw2atZ8pUBtA&quot; target=&quot;_blank&quot;&amp;gt;https://pan.baidu.com/s/1NeOo5VnNjwzw2atZ8pUBtA&amp;lt;/a&amp;gt;&lt;br /&gt;
+提取码：bfi8&lt;/p&gt;
+&lt;p&gt;这篇文章到这里就结束了,希望能够帮到大家,如有问题可以邮我,一起交流学习!&lt;/p&gt;
+</content:encoded></item></channel></rss>
